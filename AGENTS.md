@@ -9,6 +9,7 @@ These instructions apply throughout the repository. Communicate with the maintai
 - Keep every ViewModel free of `Context`, including application context. Use plain `ViewModel` and keep `Application`, activities, views, resource lookups and permission launchers outside it. Expose a typed state such as “sensor disconnected” and let the UI resolve its localized text.
 - Keep Bluetooth, storage and Android service APIs behind the data or platform boundary. A ViewModel may call a repository directly. Introduce a use case when it owns a business rule or coordinates operations. Omit single-method use cases that only forward a call.
 - Give the sensor connection and the active workout a lifetime independent of any screen. Share one stream of readings between the recorder, the workout screen and the overlay. Keep zone classification and duration calculations in plain Kotlin so all three agree at zone boundaries.
+- Keep editable zone boundaries and colors together in persistent settings. Use the default palette only to initialize those settings. Read the saved configuration on Home and capture it when starting a workout. Use that snapshot for the workout screen, overlay and results.
 
 ## Dependencies and localization
 

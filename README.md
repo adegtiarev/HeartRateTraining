@@ -6,21 +6,25 @@ Heart Rate Training is a planned Android app for recording workouts with a Bluet
 
 ## Planned rider workflow
 
-1. **Connect the strap.** Discover a compatible sensor, connect to see live beats per minute (BPM), and disconnect on demand. Live viewing works independently of starting a workout. The app will target the standard Bluetooth Low Energy Heart Rate Service, with the Coospo H9Z as the first strap for testing. [Bluetooth Heart Rate Service](https://www.bluetooth.com/specifications/specs/heart-rate-service-1-0/) · [Coospo H9Z](https://www.coospo.com/products/h9z-chest-heart-rate-monitor)
-2. **Set heart rate zones.** Enter zone boundaries in BPM or calculate them from a personal profile. One candidate is to estimate maximum heart rate as `220 − age` and use percentages of that estimate for the boundaries. The choice of method and percentages will be researched during implementation.
-3. **Start a workout and open the navigator.** The app will record timestamped readings while another app is in front or the screen is off. The optional overlay will use its whole background to show the current zone. Its only number will be the current BPM. Android requires the rider to grant “display over other apps” access for this window. [Android overlay access](https://developer.android.com/reference/android/provider/Settings#canDrawOverlays(android.content.Context))
-4. **Pause or resume when you choose.** If the strap drops out during recording, the workout timer keeps running and the overlay shows a dash on a black background until fresh readings return. The rider controls pauses.
-5. **Stop and choose Save or Discard.** Saved workouts will be available from a local database. Open a ride to see the heart rate timeline, the zones reached and the time spent in each zone. An estimated calorie total is conditional on finding a suitable method for cycling and having the inputs it requires.
+1. **Put on the strap and open the app.** On first use, choose the strap from nearby devices and connect it to the phone. On later launches, the app looks for the remembered strap and connects automatically when it is available. You can also disconnect it manually. The app targets the standard Bluetooth Low Energy Heart Rate Service, with the Coospo H9Z as the first strap for testing. [Bluetooth Heart Rate Service](https://www.bluetooth.com/specifications/specs/heart-rate-service-1-0/) · [Coospo H9Z](https://www.coospo.com/products/h9z-chest-heart-rate-monitor)
+2. **Check your pulse on Home.** Before you start recording, the home screen shows a large heart rate reading in beats per minute (BPM). The screen background takes the color of your current zone. A large **Start workout** button is the main action. **History** opens the list of saved workouts. **Settings** opens your zone boundaries and colors.
+3. **Start the workout.** The workout screen keeps the large BPM reading and zone-colored background and adds an elapsed workout timer and a **Pause** button. Recording continues while another app is in front or the screen is off. For a reading over your navigator, enable the optional overlay. It shows BPM on the same zone color and requires Android's “display over other apps” access. [Android overlay access](https://developer.android.com/reference/android/provider/Settings#canDrawOverlays(android.content.Context))
+4. **Pause, then resume or finish.** Tap **Pause** to stay on the workout screen and see live BPM while the recorder skips new readings. **Resume** continues recording into the same workout. Only **Finish** ends the workout and opens its results. A lost signal leaves the timer running during recording. The overlay shows a dash on a black background until fresh readings return.
+5. **Review the results and choose Save or Discard.** See the heart rate timeline, the zones reached and time in each zone before deciding. **Save** adds the workout to History in the local database. **Discard** removes the draft and its readings. A calorie estimate depends on finding a suitable method for cycling and having the inputs it requires.
 
 The planned interface languages are English (default), Russian and Spanish.
 
 ## Zone colors
 
+In **Settings**, you can edit each of the five zones' BPM boundaries and colors. You can also calculate boundaries from a personal profile. One candidate is to estimate maximum heart rate as `220 − age` and derive the boundaries as percentages of that estimate. The calculation method and percentages will be researched during implementation.
+
+The default palette runs from the lowest to the highest intensity.
+
 | Zone | 1 | 2 | 3 | 4 | 5 |
 | --- | --- | --- | --- | --- | --- |
 | Background | Gray | Green | Blue | Orange | Red |
 
-The workout screen, overlay and saved timeline will use this same color order. Gray always means zone 1.
+The app saves your boundaries and colors locally between sessions. Home uses your latest settings. Each workout keeps the boundaries and colors it started with for its live screen, overlay and results, including when you reopen it from History.
 
 ## Run the starter app
 

@@ -4,33 +4,35 @@ The first release should let a cyclist start a ride, switch to a navigator, see 
 
 ## 1. Read the chest strap
 
-Discover Bluetooth Low Energy sensors, let the rider select a strap, subscribe to Heart Rate Measurement and display live BPM. Handle Bluetooth being off, denied permissions, a lost signal and an explicit disconnect.
+On first use, discover compatible Bluetooth Low Energy sensors and let the rider choose a strap. Remember the successfully connected strap. On later launches, check for that device and connect automatically when it is available. Subscribe to Heart Rate Measurement and show live BPM in large digits on Home. Handle Bluetooth being off, denied permissions, an unavailable strap and an explicit disconnect.
 
-**Verify on a Pixel 6a with a Coospo H9Z.** Connect and see live BPM before starting a workout. Move the strap out of range and check that the stale reading clears. Reconnect, then deliberately disconnect and check that the app releases the strap. Discover compatible straps by their service and capabilities so other models can use the same flow.
+**Verify on a Pixel 6a with a Coospo H9Z.** Select the strap on first use and see BPM before starting a workout. Relaunch with the strap present and verify automatic connection without another selection. Repeat with it absent and check that no stale BPM appears. A deliberate disconnect releases the strap and leaves it disconnected for the rest of that visit unless the rider chooses to reconnect.
 
 ## 2. Define zones
 
-Add editable BPM boundaries and an automatic mode for the five zones. Use the rider's [zone colors](README.md#zone-colors) consistently on the workout screen, overlay and timeline. Compare ways to estimate maximum heart rate and derive zones, starting with the age-based candidate in the README. Document the chosen inputs, rounding and boundary rules.
+Add a Settings screen accessible from Home. Let riders edit the BPM boundaries and color of each zone, starting with the five [default zone colors](README.md#zone-colors). Persist the configuration locally, in settings or the database, and load it on launch. Add an automatic boundary calculation after comparing methods, starting with the age-based candidate in the README. Preserve custom colors when recalculating boundaries.
 
-**Verify the boundaries.** Check values just below, at and above each threshold for both modes. Invalid ranges can be corrected, and valid settings survive a restart.
+**Verify on Home.** Change a boundary and a color in Settings, then return to Home. Confirm that the background follows the saved zone for the live BPM. Restart the app twice, with another edit between launches, and check that the latest values persist. Exercise readings just below, at and above each threshold in both modes.
 
 ## 3. Record a workout
 
-Support start, manual pause, resume and stop. Write timestamped readings and the ride's zone definitions to a draft in a local Room database. Keep the session active while the navigator is in front or the screen is off. A dropped signal leaves the timer running. Reconnect when possible and mark the gap. Only the rider can pause or resume.
+Place a large **Start workout** button on Home alongside access to **History** and **Settings**. Starting opens the workout screen with large live BPM, the current zone's background color, a workout timer and **Pause**. Capture the ride's boundaries and colors in a local Room draft and append timestamped readings during recording. Keep recording while the navigator is in front or the screen is off. A dropped signal leaves the timer running. Reconnect when possible and mark the gap.
 
-**Verify a complete session.** Switch apps, lock and unlock the phone, interrupt the signal, and pause and resume manually. Stopping ends recording and prompts for Save or Discard. Save creates one history entry. Discard removes the draft and its readings. Reopening the app after an interruption offers the same decision for the captured portion.
+**Verify pause independently of finish.** Tap **Pause** while the strap is sending measurements. The workout screen still shows live BPM and offers **Resume** and **Finish**. Check that the stored sample count stays fixed as BPM changes. **Resume** appends subsequent readings to the same draft. Repeat with the navigator open, the screen locked and the signal interrupted.
+
+**Verify finish and review.** From a paused workout, tap **Finish**. Recording ends and Results opens on the captured ride with **Save** and **Discard**. Save creates exactly one History entry. Discard removes the draft and its readings. Reopening the app after an interruption offers the same decision for the captured portion.
 
 ## 4. Ride with the overlay
 
 Let the rider show or hide a compact window during a workout. Give the entire background the current zone color so the rider can recognize it at a glance. BPM is the only visible number. Include the zone in the accessibility description. Request overlay access when the rider first enables it.
 
-**Verify across apps.** On the Pixel 6a, switch between a navigator and another app with the overlay open. Check all five colors on light and dark maps. Interrupt the signal in gray zone 1 and check that the background turns black and a dash replaces the BPM. Verify map interaction outside the window, permission denial and revocation. Hiding the window keeps the recording active. Stopping the workout removes the window.
+**Verify across apps.** On the Pixel 6a, switch between a navigator and another app with the overlay open. Check a custom palette on light and dark maps, including a black zone. Interrupt the signal and check that a dash replaces the BPM even when the background was already black. Verify map interaction outside the window, permission denial and revocation. Hiding the window keeps the recording active. Finishing the workout removes the window.
 
 ## 5. Review a saved ride
 
-List saved workouts and show a heart rate timeline, the zones reached and time in each zone. Distinguish a manual pause from an interval when the sensor stopped reporting.
+Open the saved workout list from **History** on Home. Selecting a ride shows the same timeline, zones and time in each zone that the rider saw on Results after finishing. Distinguish a manual pause from an interval when the sensor stopped reporting.
 
-**Verify using a known ride.** Use irregularly spaced readings, a zone change, a pause and a dropout. Check the time in each zone, gaps on the chart and the total duration. Reopen the ride after restarting the app and after editing today's zones. Its results must still match the original ride.
+**Verify using a known ride.** Use irregularly spaced readings, a zone change, a pause and a dropout. Check zone durations, chart gaps and total duration. Edit a boundary and a color, restart the app and reopen the saved ride. Its timeline and zone totals should still reflect the original configuration. Start another ride and verify it uses the updated settings.
 
 ## 6. Validate the first release
 
