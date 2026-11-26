@@ -4,6 +4,8 @@ The first release should let a cyclist start a ride, switch to a navigator, see 
 
 ## 1. Read the chest strap
 
+Follow the [step 1 implementation plan](docs/step-01-live-heart-rate.md) for the verified dependency baseline, build sequence and hardware acceptance checks.
+
 On first use, discover compatible Bluetooth Low Energy sensors and let the rider choose a strap. Remember the successfully connected strap. On later launches, check for that device and connect automatically when it is available. Subscribe to Heart Rate Measurement and show live BPM in large digits on Home. Handle Bluetooth being off, denied permissions, an unavailable strap and an explicit disconnect.
 
 **Verify on a Pixel 6a with a Coospo H9Z.** Select the strap on first use and see BPM before starting a workout. Relaunch with the strap present and verify automatic connection without another selection. Repeat with it absent and check that no stale BPM appears. A deliberate disconnect releases the strap and leaves it disconnected for the rest of that visit unless the rider chooses to reconnect.

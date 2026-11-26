@@ -1,6 +1,6 @@
 # Working on Heart Rate Training
 
-These instructions apply throughout the repository. Communicate with the maintainer in Russian. Write repository documentation in English. Read the [README](README.md) for the rider's workflow and the [implementation plan](IMPLEMENTATION_PLAN.md) for the next milestone and its acceptance check.
+These instructions apply throughout the repository. Communicate with the maintainer in Russian. Write repository documentation in English and place new development documents in `docs/`. Read the [README](README.md) for the rider's workflow and the [implementation plan](IMPLEMENTATION_PLAN.md) for the next milestone and its acceptance check.
 
 ## Architecture
 

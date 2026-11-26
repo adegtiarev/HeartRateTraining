@@ -41,4 +41,5 @@ On macOS or Linux, run `./gradlew assembleDebug testDebugUnitTest`. The debug AP
 ## Project documents
 
 - [Implementation plan](IMPLEMENTATION_PLAN.md) — milestones, acceptance checks and decisions to make during development.
+- [Step 1 — Connect a chest strap and display live heart rate](docs/step-01-live-heart-rate.md) — implementation sequence and checks for the first working sensor connection.
 - [Contributor and agent instructions](AGENTS.md) — architecture, language conventions and verification.
