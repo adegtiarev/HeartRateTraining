@@ -1,10 +1,16 @@
 # Heart Rate Training
 
-Heart Rate Training is a planned Android app for recording workouts with a Bluetooth chest strap. Its first use case is cycling with a navigation app open. A glance at the color of a small window over the map will tell the rider which heart rate zone they are in. After the ride, they can review how their heart rate changed and how long they spent in each zone.
+Heart Rate Training is an Android app that displays live heart rate from a Bluetooth chest strap. The planned workout features focus on cycling with a navigation app open. A glance at the color of a small window over the map will tell the rider which heart rate zone they are in. After the ride, they will be able to review how their heart rate changed and how long they spent in each zone.
 
-**Development is at the planning stage.** The project contains a Kotlin and Jetpack Compose starter app. The planned public distribution is source code and build instructions on GitHub. There are currently no plans for a Google Play release.
+## Try live heart rate
+
+Put on the strap, open the app and grant access to nearby devices. Android 10 and 11 request location access for discovery. Tap **Find chest strap** and choose your device. Home shows live BPM as soon as the first measurement arrives. A dash appears if readings stop or the sensor reports poor contact. The app remembers the last working strap and looks for it on the next launch.
+
+**Disconnect** releases the strap for the rest of the current visit. Use **Connect** to reconnect manually or **Choose another strap** to select a replacement. Home is available in English, Russian and Spanish. Zone colors, workout recording, history and the navigation overlay are planned for later milestones.
 
 ## Planned rider workflow
+
+The planned public distribution is source code and build instructions on GitHub. There are currently no plans for a Google Play release.
 
 1. **Put on the strap and open the app.** On first use, choose the strap from nearby devices and connect it to the phone. On later launches, the app looks for the remembered strap and connects automatically when it is available. You can also disconnect it manually. The app targets the standard Bluetooth Low Energy Heart Rate Service, with the Coospo H9Z as the first strap for testing. [Bluetooth Heart Rate Service](https://www.bluetooth.com/specifications/specs/heart-rate-service-1-0/) · [Coospo H9Z](https://www.coospo.com/products/h9z-chest-heart-rate-monitor)
 2. **Check your pulse on Home.** Before you start recording, the home screen shows a large heart rate reading in beats per minute (BPM). The screen background takes the color of your current zone. A large **Start workout** button is the main action. **History** opens the list of saved workouts. **Settings** opens your zone boundaries and colors.
@@ -26,7 +32,7 @@ The default palette runs from the lowest to the highest intensity.
 
 The app saves your boundaries and colors locally between sessions. Home uses your latest settings. Each workout keeps the boundaries and colors it started with for its live screen, overlay and results, including when you reopen it from History.
 
-## Run the starter app
+## Run the app
 
 Open the project root in Android Studio and sync Gradle. The current app module supports Android 10 (API 29) and later. Use the compile SDK configured in the [app build file](app/build.gradle.kts) and the JDK selected by the [Gradle daemon toolchain](gradle/gradle-daemon-jvm.properties). Select the `app` run configuration and a device or emulator.
 

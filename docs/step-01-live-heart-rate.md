@@ -4,7 +4,7 @@
 
 ## Starting point
 
-- Read the [repository instructions](../AGENTS.md) and [product roadmap](../IMPLEMENTATION_PLAN.md). Work in the existing `:app` module, under `arg.adegtiarev.heartratetraining`. The [activity](../app/src/main/java/arg/adegtiarev/heartratetraining/MainActivity.kt) still displays the Compose template greeting. The [manifest](../app/src/main/AndroidManifest.xml) has no Bluetooth declarations yet.
+- The work started in the existing `:app` module under `arg.adegtiarev.heartratetraining`, with a Compose template greeting and no Bluetooth declarations. See the [repository instructions](../AGENTS.md) and [product roadmap](../IMPLEMENTATION_PLAN.md).
 - The [version catalog](../gradle/libs.versions.toml) and [app build file](../app/build.gradle.kts) already provide Nordic BLE KTX 2.11.0, Coroutines Android and Test 1.11.0, Lifecycle Compose 2.11.1 and Preferences DataStore 1.3.0. Java and Kotlin target 17. The minimum Android API is 29 and the target is 37. Debug and release builds and both template tests passed during dependency setup.
 - This milestone delivers live preview in the foreground. The roadmap introduces zone colors and settings in step 2, workout controls, recording and a foreground service in step 3, and the navigation overlay in step 4. A neutral Home screen with a working sensor action is enough for step 1.
 
@@ -63,4 +63,15 @@ Use the Gradle wrapper from the project root on Windows.
 .\gradlew.bat :app:connectedDebugAndroidTest
 ```
 
-The second command needs a connected phone or emulator. Record automated results and the physical H9Z check separately. As of this handoff, dependency setup is verified. Feature implementation and hardware acceptance are pending. Once the checks above pass, update step 1 in the [roadmap](../IMPLEMENTATION_PLAN.md) and the available features in the [README](../README.md).
+The second command needs a connected phone or emulator. The hardware timing test runs only when the instrumentation runner receives `wornStrap=true`. It requires a previously selected, worn strap. Add `openMaps=true` to exercise reception while the default maps app is in front.
+
+## Verification record
+
+Verified on November 26, 2026. Debug and release APKs built successfully. All 12 JVM tests passed. Android lint reported no errors. The Pixel instrumentation suite passed with the real-strap test enabled. The emulator ran the synthetic tests.
+
+- JVM tests exercise the decoder, duplicate advertisements, a failed replacement, permission changes, bounded discovery and reconnection, cancellation of an in-flight retry, late notifications, contact loss, and expiry with virtual time.
+- The Compose test drives permission explanation, discovery, selection, waiting, live BPM and disconnect using synthetic data. Android 10 (API 29) was checked on an emulator. The installed system image has no BLE radio. Grant and revoke of the legacy location permission were checked through the package manager.
+- On a Pixel 6a running Android 17 (API 37), the app discovered the Coospo H9Z, subscribed and displayed live BPM. Denying Nearby devices and then granting access recovered the flow. Rotation preserved live display. A cold launch reconnected automatically. Manual disconnect survived rotation, and tapping Connect restored live BPM.
+- With the transmitter removed, Home showed a dash. A cold launch with the strap absent ended the 12-second search with a dash and a retry action. Putting the H9Z back on and tapping Retry restored live BPM without another selection.
+- Switching the Pixel's Bluetooth off cleared the reading and exposed the enable action. The action opened the system Bluetooth prompt. Live BPM resumed automatically after Bluetooth was enabled.
+- In a sequence of 12 H9Z measurements the median notification interval was 962 ms and the longest was 1,202 ms. Home expires a reading after 5 seconds of silence. The timing check also received fresh samples with Google Maps in front and Home stopped. Only timing and connection states are reported by the hardware test.

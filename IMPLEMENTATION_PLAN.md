@@ -1,10 +1,12 @@
 # Implementation plan
 
-The first release should let a cyclist start a ride, switch to a navigator, see live heart rate over the map, and later review the saved ride. The starting point is the existing Compose app. All milestones below are pending.
+The first release should let a cyclist start a ride, switch to a navigator, see live heart rate over the map, and later review the saved ride. The live sensor preview is implemented in the Compose app. Milestones 2 through 6 are pending.
 
 ## 1. Read the chest strap
 
 Follow the [step 1 implementation plan](docs/step-01-live-heart-rate.md) for the verified dependency baseline, build sequence and hardware acceptance checks.
+
+**Completed and verified on November 26, 2026.** Home receives live notifications from a Coospo H9Z on a Pixel 6a running Android 17. The hardware checks covered first selection, automatic connection on a fresh launch, rotation, manual disconnect, launch with the strap absent, recovery when it returned, Bluetooth off/on and permission denial/recovery. The app also received fresh samples with Google Maps in front. See the [verification record](docs/step-01-live-heart-rate.md#verification-record) for device and automated test coverage.
 
 On first use, discover compatible Bluetooth Low Energy sensors and let the rider choose a strap. Remember the successfully connected strap. On later launches, check for that device and connect automatically when it is available. Subscribe to Heart Rate Measurement and show live BPM in large digits on Home. Handle Bluetooth being off, denied permissions, an unavailable strap and an explicit disconnect.
 
@@ -23,6 +25,17 @@ Place a large **Start workout** button on Home alongside access to **History** a
 **Verify pause independently of finish.** Tap **Pause** while the strap is sending measurements. The workout screen still shows live BPM and offers **Resume** and **Finish**. Check that the stored sample count stays fixed as BPM changes. **Resume** appends subsequent readings to the same draft. Repeat with the navigator open, the screen locked and the signal interrupted.
 
 **Verify finish and review.** From a paused workout, tap **Finish**. Recording ends and Results opens on the captured ride with **Save** and **Discard**. Save creates exactly one History entry. Discard removes the draft and its readings. Reopening the app after an interruption offers the same decision for the captured portion.
+
+### Background recording design
+
+The Pixel 6a kept receiving H9Z notifications during a short switch to Google Maps in milestone 1. Android closes the GATT connection if the app process dies. For the rider-initiated workout, use a started foreground service of type `connectedDevice` for the duration of the session. The existing sensor repository remains the sole owner of the GATT connection. [Android background BLE guidance](https://developer.android.com/develop/connectivity/bluetooth/ble/background)
+
+- **Start.** From the visible workout start action, verify Bluetooth access, start a private service with `startForegroundService()`, then promptly call `ServiceCompat.startForeground()` with the connected-device type and the workout notification. Declare `FOREGROUND_SERVICE` and, for API 34+, `FOREGROUND_SERVICE_CONNECTED_DEVICE`. Granted `BLUETOOTH_CONNECT` satisfies the modern Bluetooth prerequisite. Surface a recoverable error if service startup fails. [Service launch rules](https://developer.android.com/develop/background-work/services/fgs/launch) · [Connected-device permissions](https://developer.android.com/develop/background-work/services/fgs/service-types#connected-device)
+- **During a ride.** Give the service ownership of the recording session across activity destruction, app switches and screen lock. Feed each timestamped sample to the Room recorder before deriving the latest value for the UI. Keep the connection and notification during Pause, suspend writes until Resume, and use the same draft. Reconnect to the known strap with bounded attempts and backoff after a dropout. Keep device selection in the visible UI.
+- **Notification.** Use a low-importance workout channel and a tap action that returns to the active workout. On API 33+, request `POST_NOTIFICATIONS` in context. If denied, the service still supplies its mandatory notification and Android exposes the active service in Task Manager. [Notification permission behavior](https://developer.android.com/develop/ui/compose/notifications/notification-permission)
+- **Finish and recover.** On Finish, persist the stopped draft, stop the service and remove the workout notification before opening Results. Commit readings throughout the ride so a system or user stop leaves a recoverable draft. Android can stop the whole process without a cleanup callback. At the next launch offer Save or Discard. [User-initiated stops](https://developer.android.com/develop/background-work/services/fgs/handle-user-stopping)
+
+**Acceptance on the Pixel.** Run a sustained ride with Maps in front and the screen locked for part of it. Check persisted timestamps, gaps, pause/resume and elapsed duration. Repeat with notification permission denied, interrupt the strap signal, and stop the app from Android's active-apps list. Verify draft recovery and that Finish removes the notification.
 
 ## 4. Ride with the overlay
 
@@ -44,7 +57,7 @@ Exercise the complete ride in English, Russian and Spanish. Cover the minimum su
 
 ## Decisions that affect several milestones
 
-- **Bluetooth and background execution.** Start with one strap exposing the standard Heart Rate Service. Verify the rider's hardware in milestone 1. As an early feasibility check, try receiving measurements with the navigator open. For long recordings, plan a user-started foreground service of type `connectedDevice` with a workout notification. Confirm scan, connect and foreground service permissions for the supported Android versions. [Bluetooth permissions](https://developer.android.com/develop/connectivity/bluetooth/bt-permissions) · [Background BLE communication](https://developer.android.com/develop/connectivity/bluetooth/ble/background)
+- **Bluetooth and background execution.** Use a single standard Heart Rate Service subscription across the recorder, workout screen and overlay. The [background recording design](#background-recording-design) describes service ownership and recovery in milestone 3.
 - **Workout data.** Use a wall-clock start time to place a ride in history and elapsed time to position readings within it. A dropout counts toward active workout duration. A manual pause does not. Both interrupt the chart line and are excluded from zone totals. Calculate time in zone from observed intervals using the boundaries captured at workout start.
 - **Draft recovery.** Keep active and stopped drafts out of saved history. On relaunch after an interruption, offer to keep the captured portion or discard it. Saving and discarding must each be safe to retry.
 - **Overlay behavior.** Use an Android application overlay so the same window works across navigators and other foreground apps on supported phones. Android can hide it over system UI, and an app can hide overlays on its own windows. Keep recording through these visibility changes. [Android application overlay windows](https://developer.android.com/reference/android/view/WindowManager.LayoutParams#TYPE_APPLICATION_OVERLAY) · [Apps that hide overlays](https://developer.android.com/reference/android/view/Window#setHideOverlayWindows(boolean))
