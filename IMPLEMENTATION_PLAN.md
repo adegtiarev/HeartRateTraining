@@ -1,6 +1,6 @@
 # Implementation plan
 
-The first release should let a cyclist start a ride, switch to a navigator, see live heart rate over the map, and later review the saved ride. The live sensor preview is implemented in the Compose app. Milestones 2 through 6 are pending.
+The first release should let a cyclist start a ride, switch to a navigator, see live heart rate over the map, and later review the saved ride. Live sensor preview and configurable heart rate zones are implemented in the Compose app. Milestone 3 is next.
 
 ## 1. Read the chest strap
 
@@ -14,7 +14,9 @@ On first use, discover compatible Bluetooth Low Energy sensors and let the rider
 
 ## 2. Define zones
 
-Add a Settings screen accessible from Home. Let riders edit the BPM boundaries and color of each zone, starting with the five [default zone colors](README.md#zone-colors). Persist the configuration locally, in settings or the database, and load it on launch. Add an automatic boundary calculation after comparing methods, starting with the age-based candidate in the README. Preserve custom colors when recalculating boundaries.
+**Implemented and verified on November 26, 2026.** Home and Settings use Jetpack Navigation 3. The Pixel 6a reconnected to the remembered H9Z after the update, changed the displayed zone and background after a boundary edit, and loaded the latest custom color on two cold launches with an edit between them. Removing the transmitter cleared the reading and zone and restored the neutral background. See the [step 2 verification record](docs/step-02-heart-rate-zones.md#verification-record) for the automated checks and hardware procedure.
+
+Settings opens from Home with or without a strap. Its five-row table shows each zone's color and inclusive range. Zone 1 starts at zero. Riders can enter the other four starts manually or calculate them using a known maximum or an adult age. Each edit updates the previous zone's upper limit. Recalculation preserves custom colors. Preferences DataStore saves all four thresholds and five colors together. Home uses the latest saved values, including after relaunch. [Zone settings and default colors](README.md#zone-colors)
 
 **Verify on Home.** Change a boundary and a color in Settings, then return to Home. Confirm that the background follows the saved zone for the live BPM. Restart the app twice, with another edit between launches, and check that the latest values persist. Exercise readings just below, at and above each threshold in both modes.
 
@@ -66,6 +68,5 @@ Exercise the complete ride in English, Russian and Spanish. Cover the minimum su
 
 | When | Decision |
 | --- | --- |
-| During zone implementation | Choose the automatic thresholds for the five zones, how to handle values outside the configured range, and which inputs improve the estimate enough to ask for them. |
 | When evaluating calories | Review evidence for an estimator suitable for cycling, the profile fields it needs and the effect of gaps. Include a clearly labeled estimate only if the method and available data support one. Keep this independent of the first working ride. |
 | Before public distribution | Choose the license for the source repository. |

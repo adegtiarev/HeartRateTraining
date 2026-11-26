@@ -20,18 +20,21 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.core.view.WindowCompat
+import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import arg.adegtiarev.heartratetraining.bluetooth.sensorPermissions
-import arg.adegtiarev.heartratetraining.ui.HomeScreen
+import arg.adegtiarev.heartratetraining.ui.HeartRateScreens
 import arg.adegtiarev.heartratetraining.ui.HomeViewModel
+import arg.adegtiarev.heartratetraining.ui.contrastingText
 import arg.adegtiarev.heartratetraining.ui.theme.HeartRateTrainingTheme
 
 class MainActivity : ComponentActivity() {
     private val sensors get() = (application as HeartRateApplication).sensors
+    private val zones get() = (application as HeartRateApplication).zones
     private val model by viewModels<HomeViewModel> {
-        viewModelFactory { initializer { HomeViewModel(sensors) } }
+        viewModelFactory { initializer { HomeViewModel(sensors, zones) } }
     }
     private var openPermissionSettings by mutableStateOf(false)
     private val permissions = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
@@ -54,9 +57,9 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             HeartRateTrainingTheme {
-                val state by model.state.collectAsStateWithLifecycle()
-                HomeScreen(
-                    state = state,
+                HeartRateScreens(
+                    home = model,
+                    zones = zones,
                     legacyLocation = Build.VERSION.SDK_INT < Build.VERSION_CODES.S,
                     openPermissionSettings = openPermissionSettings,
                     onPermission = {
@@ -72,10 +75,12 @@ class MainActivity : ComponentActivity() {
                         }
                     },
                     onEnableLocation = { systemAction.launch(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)) },
-                    onFind = model::findStraps,
-                    onRetry = model::retry,
-                    onDisconnect = model::disconnect,
-                    onSelect = model::select,
+                    onBackgroundChanged = { color ->
+                        val bars = WindowCompat.getInsetsController(window, window.decorView)
+                        val darkIcons = contrastingText(color) == Color.Black
+                        bars.isAppearanceLightStatusBars = darkIcons
+                        bars.isAppearanceLightNavigationBars = darkIcons
+                    },
                 )
             }
         }

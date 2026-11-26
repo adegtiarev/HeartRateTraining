@@ -6,7 +6,7 @@ Heart Rate Training is an Android app that displays live heart rate from a Bluet
 
 Put on the strap, open the app and grant access to nearby devices. Android 10 and 11 request location access for discovery. Tap **Find chest strap** and choose your device. Home shows live BPM as soon as the first measurement arrives. A dash appears if readings stop or the sensor reports poor contact. The app remembers the last working strap and looks for it on the next launch.
 
-**Disconnect** releases the strap for the rest of the current visit. Use **Connect** to reconnect manually or **Choose another strap** to select a replacement. Home is available in English, Russian and Spanish. Zone colors, workout recording, history and the navigation overlay are planned for later milestones.
+**Disconnect** releases the strap for the rest of the current visit. Use **Connect** to reconnect manually or **Choose another strap** to select a replacement. Open **Zone settings** to color Home by heart rate, including before pairing a strap. Home and Settings are available in English, Russian and Spanish. Workout recording, history and the navigation overlay are planned for later milestones.
 
 ## Planned rider workflow
 
@@ -22,7 +22,9 @@ The planned interface languages are English (default), Russian and Spanish.
 
 ## Zone colors
 
-In **Settings**, you can edit each of the five zones' BPM boundaries and colors. You can also calculate boundaries from a personal profile. One candidate is to estimate maximum heart rate as `220 − age` and derive the boundaries as percentages of that estimate. The calculation method and percentages will be researched during implementation.
+Open **Zone settings** on Home. The table shows each zone's color, start and end. Enter the starting BPM of zones 2 through 5. The previous row's end updates as you type. Zone 1 starts at zero, and the ∞ symbol marks zone 5's open end.
+
+To fill in all four starts at once, open **Calculate thresholds** below the table. Enter a known maximum heart rate or an adult age, then tap **Apply to draft**. For age, the app estimates maximum heart rate using `208 − 0.7 × age`. It calculates thresholds at 60%, 70%, 80% and 90% of the maximum and keeps the colors you picked. For example, a maximum of 180 gives thresholds of 108, 126, 144 and 162 BPM. Exactly 126 BPM belongs to zone 3. [Tanaka study](https://pubmed.ncbi.nlm.nih.gov/11153730/) · [Five-zone percentages](https://support.polar.com/e_manuals/polar-360/polar-360-flow-user-manual-english/heart-rate-zones.htm)
 
 The default palette runs from the lowest to the highest intensity.
 
@@ -30,7 +32,7 @@ The default palette runs from the lowest to the highest intensity.
 | --- | --- | --- | --- | --- | --- |
 | Background | Gray | Green | Blue | Orange | Red |
 
-The app saves your boundaries and colors locally between sessions. Home uses your latest settings. Each workout keeps the boundaries and colors it started with for its live screen, overlay and results, including when you reopen it from History.
+Tap a color to select a swatch or enter a six-digit RGB value. **Save** applies all four boundaries and five colors together. **Cancel** discards your edits. Home stays neutral until the first save. With a fresh reading, Home shows the zone number and fills the screen with its saved color. A change in settings takes effect even if the strap keeps reporting the same BPM. When the signal expires, Home returns to a neutral background and a dash. Settings survive a restart. Future workouts will capture the configuration at their start.
 
 ## Run the app
 
@@ -48,4 +50,5 @@ On macOS or Linux, run `./gradlew assembleDebug testDebugUnitTest`. The debug AP
 
 - [Implementation plan](IMPLEMENTATION_PLAN.md) — milestones, acceptance checks and decisions to make during development.
 - [Step 1 — Connect a chest strap and display live heart rate](docs/step-01-live-heart-rate.md) — implementation sequence and checks for the first working sensor connection.
+- [Step 2 — Configure heart rate zones](docs/step-02-heart-rate-zones.md) — zone rules, settings and verification.
 - [Contributor and agent instructions](AGENTS.md) — architecture, language conventions and verification.

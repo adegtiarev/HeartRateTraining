@@ -10,6 +10,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import arg.adegtiarev.heartratetraining.sensor.*
 import arg.adegtiarev.heartratetraining.ui.HomeScreen
+import arg.adegtiarev.heartratetraining.ui.HomeUiState
 import arg.adegtiarev.heartratetraining.ui.theme.HeartRateTrainingTheme
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -24,7 +25,8 @@ class HomeScreenTest {
         val state = mutableStateOf(SensorState(access = SensorAccess.PermissionNeeded))
         compose.setContent {
             HeartRateTrainingTheme {
-                HomeScreen(state.value, legacyLocation = legacyLocation, openPermissionSettings = false,
+                HomeScreen(HomeUiState(state.value), legacyLocation = legacyLocation, openPermissionSettings = false,
+                    onZoneSettings = {}, onRetryZones = {},
                     onPermission = { state.value = SensorState(access = SensorAccess.Ready) },
                     onEnableBluetooth = {}, onEnableLocation = {}, onRetry = {},
                     onFind = { state.value = state.value.copy(phase = SensorPhase.Scanning,

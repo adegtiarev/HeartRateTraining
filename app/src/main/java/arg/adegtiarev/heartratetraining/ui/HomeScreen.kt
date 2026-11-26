@@ -9,6 +9,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -18,10 +20,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import arg.adegtiarev.heartratetraining.R
 import arg.adegtiarev.heartratetraining.sensor.*
+import arg.adegtiarev.heartratetraining.zones.HeartRateZone
+import arg.adegtiarev.heartratetraining.zones.ZoneSettings
 
 @Composable
 fun HomeScreen(
-    state: SensorState,
+    home: HomeUiState,
     legacyLocation: Boolean,
     openPermissionSettings: Boolean,
     onPermission: () -> Unit,
@@ -31,11 +35,17 @@ fun HomeScreen(
     onRetry: () -> Unit,
     onDisconnect: () -> Unit,
     onSelect: (Strap) -> Unit,
+    onZoneSettings: () -> Unit,
+    onRetryZones: () -> Unit,
 ) {
+    val state = home.sensor
+    val zoneColor = home.zone?.let { opaqueRgb(it.rgb) }
+    val background = zoneColor ?: MaterialTheme.colorScheme.background
+    val foreground = zoneColor?.let(::contrastingText) ?: MaterialTheme.colorScheme.onBackground
     val picker = state.access == SensorAccess.Ready &&
         state.phase in setOf(SensorPhase.Scanning, SensorPhase.ScanFinished)
     BackHandler(enabled = picker, onBack = onDisconnect)
-    Scaffold { insets ->
+    Scaffold(containerColor = background, contentColor = foreground) { insets ->
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(insets).wrapContentWidth().widthIn(max = 600.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -45,15 +55,20 @@ fun HomeScreen(
             item {
                 Text(stringResource(R.string.heart_rate), style = MaterialTheme.typography.headlineMedium)
             }
-            item { PulseDisplay(state.sample) }
+            item { PulseDisplay(state.sample, home.zone) }
             item { Text(stringResource(statusText(state, legacyLocation)), style = MaterialTheme.typography.bodyLarge) }
             val strapName = (state.active ?: state.remembered)?.name
             if (strapName != null && !picker) {
                 item { Text(strapName, style = MaterialTheme.typography.labelLarge) }
             }
             if (state.storageError) {
-                item { Text(stringResource(R.string.storage_error), color = MaterialTheme.colorScheme.error) }
+                item { Text(stringResource(R.string.storage_error)) }
             }
+            if (home.settings == ZoneSettings.Invalid || home.settings == ZoneSettings.ReadError) {
+                item { Text(stringResource(R.string.zone_read_error)) }
+                item { SecondaryAction(R.string.retry, onRetryZones) }
+            }
+            item { SecondaryAction(R.string.zone_settings, onZoneSettings) }
             item {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     when (state.access) {
@@ -68,7 +83,7 @@ fun HomeScreen(
                                 SecondaryAction(R.string.cancel, onDisconnect)
                             }
                             SensorPhase.Searching, SensorPhase.Connecting, SensorPhase.Waiting, SensorPhase.Live,
-                            SensorPhase.ContactLost, SensorPhase.Stale -> Action(R.string.disconnect, onDisconnect)
+                            SensorPhase.ContactLost, SensorPhase.Stale -> Action(R.string.disconnect, onDisconnect, zoneColor)
                             SensorPhase.Idle -> {
                                 if (state.remembered != null) {
                                     Action(R.string.connect, onRetry)
@@ -105,11 +120,17 @@ fun HomeScreen(
 }
 
 @Composable
-private fun PulseDisplay(sample: PulseSample?) {
+private fun PulseDisplay(sample: PulseSample?, zone: HeartRateZone?) {
     val reading = if (sample == null) stringResource(R.string.no_reading) else stringResource(R.string.number, sample.bpm)
-    val description = if (sample == null) stringResource(R.string.no_reading_description)
+    val pulse = if (sample == null) stringResource(R.string.no_reading_description)
         else pluralStringResource(R.plurals.pulse_description, sample.bpm, sample.bpm)
-    Surface(color = MaterialTheme.colorScheme.surfaceContainer, shape = MaterialTheme.shapes.extraLarge) {
+    val zoneName = zone?.let { stringResource(R.string.zone_number, it.number) }
+    val description = if (zoneName == null) pulse else stringResource(R.string.zone_reading, pulse, zoneName)
+    Surface(
+        color = if (zone == null) MaterialTheme.colorScheme.surfaceContainer else Color.Transparent,
+        contentColor = if (zone == null) MaterialTheme.colorScheme.onSurface else LocalContentColor.current,
+        shape = MaterialTheme.shapes.extraLarge,
+    ) {
         Column(
             modifier = Modifier.fillMaxWidth().clearAndSetSemantics { contentDescription = description }
                 .padding(horizontal = 12.dp, vertical = 24.dp),
@@ -118,18 +139,30 @@ private fun PulseDisplay(sample: PulseSample?) {
             Text(reading, style = MaterialTheme.typography.displayLarge.copy(
                 fontSize = 78.sp, lineHeight = 86.sp, fontWeight = FontWeight.Medium))
             Text(stringResource(R.string.bpm_unit), style = MaterialTheme.typography.titleMedium)
+            if (zoneName != null) Text(zoneName, style = MaterialTheme.typography.headlineSmall)
         }
     }
 }
 
 @Composable
-private fun Action(@StringRes label: Int, onClick: () -> Unit) {
-    Button(onClick = onClick) { Text(stringResource(label)) }
+private fun Action(@StringRes label: Int, onClick: () -> Unit, zoneColor: Color? = null) {
+    val colors = if (zoneColor == null) ButtonDefaults.buttonColors()
+        else ButtonDefaults.buttonColors(containerColor = contrastingText(zoneColor), contentColor = zoneColor)
+    Button(onClick = onClick, colors = colors) { Text(stringResource(label)) }
 }
 
 @Composable
 private fun SecondaryAction(@StringRes label: Int, onClick: () -> Unit) {
-    TextButton(onClick = onClick) { Text(stringResource(label)) }
+    TextButton(onClick = onClick, colors = ButtonDefaults.textButtonColors(contentColor = LocalContentColor.current)) {
+        Text(stringResource(label))
+    }
+}
+
+internal fun opaqueRgb(rgb: Int) = Color(rgb or 0xFF000000.toInt())
+
+internal fun contrastingText(background: Color): Color {
+    val luminance = background.luminance()
+    return if ((luminance + 0.05f) / 0.05f >= 1.05f / (luminance + 0.05f)) Color.Black else Color.White
 }
 
 @StringRes
