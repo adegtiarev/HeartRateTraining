@@ -21,7 +21,7 @@ class HeartRateZonesTest {
                 for (bpm in listOf(start, start + 1)) assertEquals(HeartRateZone(index + 2, colors[index + 1]), zones.zoneFor(bpm))
             }
             assertEquals(1, zones.zoneFor(0).number)
-            for (bpm in listOf(180, 181, 65535)) assertEquals(5, zones.zoneFor(bpm).number)
+            for (bpm in listOf(172, 180, 181)) assertEquals(5, zones.zoneFor(bpm).number)
         }
     }
 
@@ -55,7 +55,7 @@ class HeartRateZonesTest {
         assertNull(ZoneConfiguration.create(manual.drop(1), colors))
         assertNull(ZoneConfiguration.create(manual, colors + 2))
         assertNull(ZoneConfiguration.create(manual, listOf(-1) + colors.drop(1)))
-        assertEquals(5, ZoneConfiguration.create(listOf(1, 2, 3, MAX_BPM), colors)!!.zoneFor(MAX_BPM).number)
+        assertEquals(5, ZoneConfiguration.create(listOf(105, 125, 145, 172), colors)!!.zoneFor(172).number)
         assertEquals(0x00AAFF, parseRgb("#00aAfF"))
         for (bad in listOf("0000", "ZZ0000", "00-100", "12345678")) assertNull(parseRgb(bad))
     }

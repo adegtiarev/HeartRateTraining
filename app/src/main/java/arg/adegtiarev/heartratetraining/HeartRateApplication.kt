@@ -6,6 +6,7 @@ import androidx.room.Room
 import arg.adegtiarev.heartratetraining.data.WorkoutDatabase
 import arg.adegtiarev.heartratetraining.data.WorkoutLibrary
 import arg.adegtiarev.heartratetraining.workout.WorkoutRecorder
+import arg.adegtiarev.heartratetraining.workout.WorkoutOverlay
 import arg.adegtiarev.heartratetraining.zones.ZoneSettingsRepository
 import arg.adegtiarev.heartratetraining.bluetooth.AndroidSensorTransport
 import arg.adegtiarev.heartratetraining.bluetooth.DataStoreStrapStore
@@ -31,4 +32,5 @@ open class HeartRateApplication : Application() {
     val recorder by lazy {
         WorkoutRecorder(database.workouts(), sensors, scope, SystemClock::elapsedRealtime, System::currentTimeMillis)
     }
+    val overlay by lazy { WorkoutOverlay(recorder.state) }
 }

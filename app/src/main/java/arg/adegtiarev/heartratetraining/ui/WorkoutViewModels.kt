@@ -17,9 +17,11 @@ data class LiveWorkout(val ride: Workout, val sensor: SensorState, val activeMs:
 class WorkoutViewModel(
     private val recorder: WorkoutRecorder,
     sensors: SensorRepository,
+    private val overlay: WorkoutOverlay,
     clock: () -> Long,
 ) : ViewModel() {
     val session = recorder.state
+    val overlayState = overlay.state
     val live = combine(session, sensors.state, flow {
         while (true) {
             emit(clock())
@@ -37,6 +39,7 @@ class WorkoutViewModel(
     fun finish(id: String) = recorder.finish(id)
     fun decide(id: String, save: Boolean) = recorder.decide(id, save)
     fun retry() = recorder.retryRecovery()
+    fun hideOverlay(id: String) = overlay.hide(id)
 }
 
 sealed interface WorkoutLoad<out T> {

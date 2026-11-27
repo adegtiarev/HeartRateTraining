@@ -4,6 +4,7 @@ import android.app.*
 import android.bluetooth.BluetoothAdapter
 import android.content.*
 import android.content.pm.ServiceInfo
+import android.content.res.Configuration
 import android.os.IBinder
 import android.os.Build
 import android.Manifest
@@ -14,6 +15,7 @@ import androidx.core.content.ContextCompat
 import arg.adegtiarev.heartratetraining.HeartRateApplication
 import arg.adegtiarev.heartratetraining.MainActivity
 import arg.adegtiarev.heartratetraining.R
+import arg.adegtiarev.heartratetraining.overlay.WorkoutOverlayWindow
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -21,16 +23,19 @@ import kotlinx.coroutines.flow.map
 class WorkoutService : Service() {
     private val app get() = application as HeartRateApplication
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    private var overlayWindow: WorkoutOverlayWindow? = null
     private val radio = object : BroadcastReceiver() {
-        override fun onReceive(context: Context, intent: Intent) = app.sensors.refresh()
+        override fun onReceive(context: Context, intent: Intent) {
+            if (intent.action == Intent.ACTION_SCREEN_ON) app.sensors.expireStaleSample() else app.sensors.refresh()
+        }
     }
 
     override fun onCreate() {
         super.onCreate()
         getSystemService(NotificationManager::class.java).createNotificationChannel(
             NotificationChannel(CHANNEL, getString(R.string.workout_channel), NotificationManager.IMPORTANCE_LOW))
-        ContextCompat.registerReceiver(this, radio, IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED),
-            ContextCompat.RECEIVER_EXPORTED)
+        val changes = IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED).apply { addAction(Intent.ACTION_SCREEN_ON) }
+        ContextCompat.registerReceiver(this, radio, changes, ContextCompat.RECEIVER_EXPORTED)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -38,12 +43,15 @@ class WorkoutService : Service() {
             ServiceCompat.startForeground(this, NOTIFICATION, notification(false),
                 ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE)
             if (!app.recorder.startInService(::end)) end()
-            else if (watch == null) watch = scope.launch {
-                app.recorder.state.map { it.ride?.phase }.distinctUntilChanged().collect { phase ->
-                    if ((phase == WorkoutPhase.Paused || phase == WorkoutPhase.Recording) &&
-                        (Build.VERSION.SDK_INT < 33 || checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) ==
-                            PackageManager.PERMISSION_GRANTED)) {
-                        getSystemService(NotificationManager::class.java).notify(NOTIFICATION, notification(phase == WorkoutPhase.Paused))
+            else if (watch == null) {
+                overlayWindow = WorkoutOverlayWindow(this, app.overlay, app.sensors, scope)
+                watch = scope.launch {
+                    app.recorder.state.map { it.ride?.phase }.distinctUntilChanged().collect { phase ->
+                        if ((phase == WorkoutPhase.Paused || phase == WorkoutPhase.Recording) &&
+                            (Build.VERSION.SDK_INT < 33 || checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) ==
+                                PackageManager.PERMISSION_GRANTED)) {
+                            getSystemService(NotificationManager::class.java).notify(NOTIFICATION, notification(phase == WorkoutPhase.Paused))
+                        }
                     }
                 }
             }
@@ -67,15 +75,27 @@ class WorkoutService : Service() {
     }
 
     private fun end() {
+        closeOverlay()
         ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
         stopSelf()
     }
 
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        overlayWindow?.refreshLabels()
+    }
+
     override fun onDestroy() {
+        closeOverlay()
         scope.cancel()
         unregisterReceiver(radio)
         app.recorder.serviceDestroyed()
         super.onDestroy()
+    }
+
+    private fun closeOverlay() {
+        overlayWindow?.close()
+        overlayWindow = null
     }
 
     override fun onBind(intent: Intent?): IBinder? = null

@@ -1,4 +1,12 @@
 <resources>
+    <string name="overlay_title">Ventana de frecuencia cardíaca</string>
+    <string name="overlay_show">Mostrar ventana de pulso</string>
+    <string name="overlay_hide">Ocultar ventana de pulso</string>
+    <string name="overlay_gestures">Arrastra la ventana de pulso para moverla. Junta o separa dos dedos sobre ella para cambiar el tamaño de la ventana y de los números.</string>
+    <string name="overlay_settings">Abrir ajustes</string>
+    <string name="overlay_explanation">Para ver tu pulso sobre el mapa, permite que %1$s se muestre sobre otras aplicaciones. Si Android muestra una lista, selecciona la aplicación y activa el permiso.</string>
+    <string name="overlay_access_off">El permiso para mostrarse sobre otras aplicaciones está desactivado. Toca Mostrar ventana de pulso para activarlo.</string>
+    <string name="overlay_error">No se pudo abrir la ventana de pulso. Comprueba el permiso para mostrarse sobre otras aplicaciones en los ajustes de Android y vuelve a intentarlo.</string>
     <string name="workout_start">Iniciar entrenamiento</string>
     <string name="workout_return">Volver al entrenamiento</string>
     <string name="workout_history">Historial</string>

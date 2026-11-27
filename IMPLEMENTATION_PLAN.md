@@ -1,6 +1,6 @@
 # Implementation plan
 
-The first release should let a cyclist start a ride, switch to a navigator, see live heart rate over the map, and later review the saved ride. The Compose app now records workouts, displays Results and reopens saved rides from History. The map overlay is the next feature. The sustained background ride with a physical strap is still an acceptance check for milestone 3.
+The app records workouts, shows live heart rate over a navigator and reopens saved rides from History. The next hardware check is a sustained ride with the chest strap to verify background recording, radio reconnection and the overlay on a physical phone.
 
 ## 1. Read the chest strap
 
@@ -45,9 +45,13 @@ The Pixel 6a kept receiving H9Z notifications during a short switch to Google Ma
 
 ## 4. Ride with the overlay
 
+Follow the [step 4 implementation plan](docs/step-04-workout-overlay.md) for the permission flow, service-owned window and cross-app acceptance checks.
+
+**Implemented and verified on Android 10 and 17 emulators.** During recording or Pause, the rider can move the pulse window with one finger and pinch with two to resize both the window and digits. The app restores its size and relative position across workouts and after a cold launch. The foreground service colors the window using the ride's zone snapshot and removes it on Finish. The Pixel 6a and Coospo H9Z ride remains the physical acceptance check. [Step 4 verification record](docs/step-04-workout-overlay.md#verification-record)
+
 Let the rider show or hide a compact window during a workout. Give the entire background the current zone color so the rider can recognize it at a glance. BPM is the only visible number. Include the zone in the accessibility description. Request overlay access when the rider first enables it.
 
-**Verify across apps.** On the Pixel 6a, switch between a navigator and another app with the overlay open. Check a custom palette on light and dark maps, including a black zone. Interrupt the signal and check that a dash replaces the BPM even when the background was already black. Verify map interaction outside the window, permission denial and revocation. Hiding the window keeps the recording active. Finishing the workout removes the window.
+**Verify across apps.** On the Pixel 6a, switch between a navigator and another app with the overlay open. Drag and pinch the window, rotate the phone and check its position and size on the next workout. Check a custom palette on light and dark maps, including a black zone. Interrupt the signal and check that a dash replaces the BPM even when the background was already black. Verify map interaction outside the window, permission denial and revocation. Hiding the window keeps the recording active. Finishing the workout removes the window.
 
 ## 5. Review a saved ride
 

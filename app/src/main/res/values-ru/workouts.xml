@@ -1,4 +1,12 @@
 <resources>
+    <string name="overlay_title">Окно пульса</string>
+    <string name="overlay_show">Показать окно пульса</string>
+    <string name="overlay_hide">Скрыть окно пульса</string>
+    <string name="overlay_gestures">Перетащите окно пульса одним пальцем. Сведите или разведите два пальца на окне, чтобы изменить размер окна и цифр.</string>
+    <string name="overlay_settings">Открыть настройки</string>
+    <string name="overlay_explanation">Чтобы видеть пульс поверх карты, разрешите приложению «%1$s» показ поверх других приложений. Если Android откроет список, выберите приложение и включите разрешение.</string>
+    <string name="overlay_access_off">Показ поверх других приложений выключен. Нажмите «Показать окно пульса», чтобы включить его.</string>
+    <string name="overlay_error">Не удалось открыть окно пульса. Проверьте разрешение на показ поверх других приложений в настройках Android и попробуйте ещё раз.</string>
     <string name="workout_start">Начать тренировку</string>
     <string name="workout_return">Вернуться к тренировке</string>
     <string name="workout_history">История</string>

@@ -279,7 +279,7 @@ class SensorRepository(
         }
     }
 
-    private fun expireStaleSample() {
+    internal fun expireStaleSample() {
         val sample = current.sample ?: return
         if (elapsedMs() - sample.receivedAtMs >= FRESH_MS) {
             current = current.copy(phase = SensorPhase.Stale, sample = null)

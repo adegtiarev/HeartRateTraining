@@ -19,6 +19,7 @@ import androidx.room.Room
 import arg.adegtiarev.heartratetraining.data.WorkoutDatabase
 import arg.adegtiarev.heartratetraining.data.WorkoutLibrary
 import arg.adegtiarev.heartratetraining.workout.WorkoutRecorder
+import arg.adegtiarev.heartratetraining.workout.WorkoutOverlay
 import androidx.test.espresso.Espresso.closeSoftKeyboard
 import arg.adegtiarev.heartratetraining.sensor.*
 import arg.adegtiarev.heartratetraining.ui.*
@@ -85,8 +86,8 @@ class ZoneScreensTest {
             ) {
                 HeartRateTrainingTheme {
                     val home = viewModel { HomeViewModel(sensors, zones) }
-                    val workouts = viewModel { WorkoutViewModel(recorder, sensors) { now } }
-                    HeartRateScreens(home, zones, false, false, {}, {}, {}, {}, workouts, library, {})
+                    val workouts = viewModel { WorkoutViewModel(recorder, sensors, WorkoutOverlay(recorder.state)) { now } }
+                    HeartRateScreens(home, zones, false, false, {}, {}, {}, {}, workouts, library, {}, {}, {})
                 }
             }
         }
@@ -183,9 +184,9 @@ class ZoneScreensTest {
         compose.onNodeWithContentDescription(firstRange(117)).performScrollTo().assertIsDisplayed()
         compose.onNodeWithContentDescription(firstRange(119)).assertDoesNotExist()
 
-        enter(5, "65535")
-        threshold(5).assertTextContains("65535")
-        val last = label(R.string.zone_reading, label(R.string.zone_number, 5), label(R.string.zone_open_range, 65535))
+        enter(5, "172")
+        threshold(5).assertTextContains("172")
+        val last = label(R.string.zone_reading, label(R.string.zone_number, 5), label(R.string.zone_open_range, 172))
         compose.onNodeWithContentDescription(last).performScrollTo().assertIsDisplayed()
     }
 }

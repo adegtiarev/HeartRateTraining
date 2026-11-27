@@ -1,9 +1,11 @@
 package arg.adegtiarev.heartratetraining
 
 import android.Manifest
+import android.accessibilityservice.AccessibilityServiceInfo
 import android.app.NotificationManager
 import android.content.Context
 import android.content.pm.PackageManager
+import android.graphics.Rect
 import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
@@ -11,6 +13,7 @@ import android.os.SystemClock
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.test.platform.app.InstrumentationRegistry
+import arg.adegtiarev.heartratetraining.overlay.OverlayPlacementStore
 import arg.adegtiarev.heartratetraining.sensor.*
 import arg.adegtiarev.heartratetraining.workout.*
 import kotlinx.coroutines.flow.first
@@ -132,6 +135,32 @@ class WorkoutFlowTest {
         val id = start()
         listOf(120, 135, 150).forEach(::pulse)
         await { count(id) == 3 }
+        if (args.getString("showOverlay") == "true") {
+            click(R.string.overlay_show)
+            await { app.overlay.state.value?.phase == OverlayPhase.Visible }
+            val automation = instrumentation.uiAutomation
+            automation.serviceInfo = automation.serviceInfo.apply {
+                flags = flags or AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS or AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS
+            }
+            fun badge() = automation.windows.mapNotNull { it.root }.flatMap {
+                it.findAccessibilityNodeInfosByViewId("${app.packageName}:id/overlay_pulse")
+            }.singleOrNull()?.let { node -> Rect().also(node::getBoundsInScreen) }
+            await { badge()?.isEmpty == false }
+            val initial = badge()!!
+            val screen = checkNotNull(automation.takeScreenshot())
+            val x = screen.width / 3
+            val y = screen.height * 2 / 3
+            screen.recycle()
+            shell("input swipe ${initial.centerX()} ${initial.centerY()} $x $y 300")
+            await { badge()?.let { kotlin.math.abs(it.centerX() - x) < 5 } == true }
+            val moved = badge()!!
+            val originalScale = OverlayPlacementStore(app).read().scale
+            val targetScale = if (originalScale < 1.3f) 1.5f else 1f
+            val span = moved.width() * 0.35f
+            automation.pinch(moved, span, span * targetScale / originalScale)
+            await { kotlin.math.abs(OverlayPlacementStore(app).read().scale - targetScale) < 0.04f }
+            instrumentation.sendStatus(0, Bundle().apply { putString("stream", "Fixture overlay bounds: ${badge()!!.flattenToString()}\n") })
+        }
         instrumentation.sendStatus(0, Bundle().apply { putString("stream", "Captured three fixture samples for system Stop.\n") })
         // The host can exercise Android's Active apps Stop during this window.
         SystemClock.sleep(25_000)

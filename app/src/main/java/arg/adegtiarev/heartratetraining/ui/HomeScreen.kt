@@ -11,8 +11,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
+import android.content.res.Resources
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.font.FontWeight
@@ -62,7 +63,7 @@ fun HomeScreen(
             item {
                 Text(stringResource(R.string.heart_rate), style = MaterialTheme.typography.headlineMedium)
             }
-            item { PulseDisplay(state.sample, home.zone) }
+            item { PulseDisplay(state.sample?.bpm, home.zone) }
             if (!picker) item {
                 Button(onClick = onStart, enabled = startEnabled,
                     modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)) { Text(stringResource(workoutAction)) }
@@ -142,12 +143,11 @@ fun HomeScreen(
 }
 
 @Composable
-internal fun PulseDisplay(sample: PulseSample?, zone: HeartRateZone?) {
-    val reading = if (sample == null) stringResource(R.string.no_reading) else stringResource(R.string.number, sample.bpm)
-    val pulse = if (sample == null) stringResource(R.string.no_reading_description)
-        else pluralStringResource(R.plurals.pulse_description, sample.bpm, sample.bpm)
+internal fun PulseDisplay(bpm: Int?, zone: HeartRateZone?) {
+    val resources = LocalResources.current
+    val reading = resources.pulseNumber(bpm)
     val zoneName = zone?.let { stringResource(R.string.zone_number, it.number) }
-    val description = if (zoneName == null) pulse else stringResource(R.string.zone_reading, pulse, zoneName)
+    val description = resources.pulseDescription(bpm, zone)
     Surface(
         color = if (zone == null) MaterialTheme.colorScheme.surfaceContainer else Color.Transparent,
         contentColor = if (zone == null) MaterialTheme.colorScheme.onSurface else LocalContentColor.current,
@@ -164,6 +164,15 @@ internal fun PulseDisplay(sample: PulseSample?, zone: HeartRateZone?) {
             if (zoneName != null) Text(zoneName, style = MaterialTheme.typography.headlineSmall)
         }
     }
+}
+
+internal fun Resources.pulseNumber(bpm: Int?): String =
+    if (bpm == null) getString(R.string.no_reading) else getString(R.string.number, bpm)
+
+internal fun Resources.pulseDescription(bpm: Int?, zone: HeartRateZone?): String {
+    if (bpm == null) return getString(R.string.no_reading_description)
+    val pulse = getQuantityString(R.plurals.pulse_description, bpm, bpm)
+    return if (zone == null) pulse else getString(R.string.zone_reading, pulse, getString(R.string.zone_number, zone.number))
 }
 
 @Composable

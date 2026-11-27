@@ -1,5 +1,9 @@
 package arg.adegtiarev.heartratetraining.sensor
 
+import arg.adegtiarev.heartratetraining.workout.Workout
+import arg.adegtiarev.heartratetraining.workout.WorkoutReading
+import arg.adegtiarev.heartratetraining.workout.reading
+import arg.adegtiarev.heartratetraining.zones.ZoneConfiguration
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -41,7 +45,8 @@ class SensorRepositoryTest {
             override suspend fun read() = saved
             override suspend fun write(strap: Strap) { saved = strap }
         }
-        val repo = SensorRepository(transport, store, scope.backgroundScope) { scope.testScheduler.currentTime }
+        var sleepMs = 0L
+        val repo = SensorRepository(transport, store, scope.backgroundScope) { scope.testScheduler.currentTime + sleepMs }
         val state get() = repo.state.value
         fun launch() {
             repo.stopVisit()
@@ -60,6 +65,34 @@ class SensorRepositoryTest {
         fun packet(vararg bytes: Byte) {
             decodeHeartRate(bytes)?.let { event(SensorEvent.Measurement(it, scope.testScheduler.currentTime)) }
         }
+    }
+
+    @Test fun blackZoneReadingExpiresAtFiveSecondsAndOnWake() = runTest {
+        val rig = Rig(this)
+        val ride = Workout("fixture", 0, ZoneConfiguration.create(listOf(108, 126, 144, 162),
+            listOf(1, 2, 0, 0xffffff, 5))!!)
+        fun reading() = ride.reading(rig.state.sample)
+        rig.launch()
+        rig.repo.select(strap)
+        runCurrent()
+        rig.event(SensorEvent.Subscribed)
+        rig.packet(0, 125)
+        assertEquals(2, reading().zone!!.number)
+        advanceTimeBy(1000)
+        rig.packet(0, 126)
+        advanceTimeBy(1000)
+        rig.packet(0, 126)
+        advanceTimeBy(4999)
+        assertEquals(126, reading().bpm)
+        assertEquals(0, reading().zone!!.rgb)
+        advanceTimeBy(1)
+        runCurrent()
+        assertEquals(WorkoutReading(null, null), reading())
+        rig.event(SensorEvent.Measurement(HeartRateMeasurement.Pulse(144), testScheduler.currentTime))
+        assertEquals(0xffffff, reading().zone!!.rgb)
+        rig.sleepMs += 5000
+        rig.repo.expireStaleSample()
+        assertEquals(WorkoutReading(null, null), reading())
     }
 
     @Test fun pickerMergesAdvertisementsAndKeepsResultsAfterTimeout() = runTest {

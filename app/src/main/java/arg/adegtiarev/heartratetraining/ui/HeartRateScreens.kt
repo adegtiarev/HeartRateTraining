@@ -18,6 +18,7 @@ import arg.adegtiarev.heartratetraining.data.WorkoutLibrary
 import arg.adegtiarev.heartratetraining.sensor.SensorAccess
 import arg.adegtiarev.heartratetraining.workout.WorkoutError
 import arg.adegtiarev.heartratetraining.workout.WorkoutPhase
+import arg.adegtiarev.heartratetraining.workout.reading
 import arg.adegtiarev.heartratetraining.zones.ZoneConfiguration
 import arg.adegtiarev.heartratetraining.zones.ZoneSettings
 import arg.adegtiarev.heartratetraining.zones.ZoneSettingsRepository
@@ -46,6 +47,8 @@ fun HeartRateScreens(
     workouts: WorkoutViewModel,
     library: WorkoutLibrary,
     onStartWorkout: (ZoneConfiguration?) -> Unit,
+    onShowOverlay: (String) -> Unit,
+    onOverlaySettings: (String) -> Unit,
     notificationVisit: Int = 0,
     explainNotifications: Boolean = false,
 ) {
@@ -72,7 +75,7 @@ fun HeartRateScreens(
     }
     val zone = when (backStack.lastOrNull()) {
         HomeRoute -> state.zone
-        WorkoutRoute -> state.sensor.sample?.let { ride?.zones?.zoneFor(it.bpm) }
+        WorkoutRoute -> ride?.reading(state.sensor.sample)?.zone
         else -> null
     }
     val background = zone?.let { opaqueRgb(it.rgb) } ?: MaterialTheme.colorScheme.background
@@ -120,10 +123,14 @@ fun HeartRateScreens(
             }
             entry<WorkoutRoute> {
                 val live by workouts.live.collectAsStateWithLifecycle()
+                val overlay by workouts.overlayState.collectAsStateWithLifecycle()
                 live?.let { current ->
                     val id = current.ride.id
                     WorkoutScreen(current, legacyLocation, { workouts.pause(id) }, { workouts.resume(id) },
-                        { workouts.finish(id) }, home::retry, ::back)
+                        { workouts.finish(id) }, home::retry, ::back,
+                        overlay = overlay?.takeIf { it.rideId == id }?.phase,
+                        onShowOverlay = { onShowOverlay(id) }, onHideOverlay = { workouts.hideOverlay(id) },
+                        onOverlaySettings = { onOverlaySettings(id) })
                 }
             }
             entry<HistoryRoute> {

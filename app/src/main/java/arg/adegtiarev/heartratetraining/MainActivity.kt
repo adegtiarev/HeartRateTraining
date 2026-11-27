@@ -3,6 +3,7 @@ package arg.adegtiarev.heartratetraining
 import android.bluetooth.BluetoothAdapter
 import android.Manifest
 import android.content.BroadcastReceiver
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
@@ -33,6 +34,7 @@ import arg.adegtiarev.heartratetraining.ui.HeartRateScreens
 import arg.adegtiarev.heartratetraining.ui.HomeViewModel
 import arg.adegtiarev.heartratetraining.ui.WorkoutViewModel
 import arg.adegtiarev.heartratetraining.workout.WorkoutService
+import arg.adegtiarev.heartratetraining.workout.OverlayPhase
 import arg.adegtiarev.heartratetraining.zones.ZoneConfiguration
 import arg.adegtiarev.heartratetraining.ui.contrastingText
 import arg.adegtiarev.heartratetraining.ui.theme.HeartRateTrainingTheme
@@ -42,7 +44,7 @@ class MainActivity : ComponentActivity() {
     private val sensors get() = app.sensors
     private val zones get() = app.zones
     private val workouts by viewModels<WorkoutViewModel> {
-        viewModelFactory { initializer { WorkoutViewModel(app.recorder, sensors, SystemClock::elapsedRealtime) } }
+        viewModelFactory { initializer { WorkoutViewModel(app.recorder, sensors, app.overlay, SystemClock::elapsedRealtime) } }
     }
     private var notificationVisit by mutableIntStateOf(0)
     private var explainNotifications by mutableStateOf(false)
@@ -76,6 +78,8 @@ class MainActivity : ComponentActivity() {
                     home = model,
                     zones = zones,
                     workouts = workouts, library = app.library, onStartWorkout = ::startWorkout,
+                    onShowOverlay = { id -> app.overlay.show(id, Settings.canDrawOverlays(this)) },
+                    onOverlaySettings = ::openOverlaySettings,
                     notificationVisit = notificationVisit,
                     explainNotifications = explainNotifications,
                     legacyLocation = Build.VERSION.SDK_INT < Build.VERSION_CODES.S,
@@ -102,6 +106,22 @@ class MainActivity : ComponentActivity() {
                 )
             }
         }
+    }
+
+    private fun openOverlaySettings(id: String) {
+        if (!app.overlay.openSettings(id)) return
+        val action = Settings.ACTION_MANAGE_OVERLAY_PERMISSION
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R && launchOverlaySettings(Intent(action, "package:$packageName".toUri()))) return
+        if (!launchOverlaySettings(Intent(action))) app.overlay.failed(id)
+    }
+
+    private fun launchOverlaySettings(intent: Intent): Boolean = try {
+        startActivity(intent)
+        true
+    } catch (_: ActivityNotFoundException) {
+        false
+    } catch (_: SecurityException) {
+        false
     }
 
     private fun startWorkout(config: ZoneConfiguration?) {
@@ -142,6 +162,9 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        if (app.overlay.state.value?.phase == OverlayPhase.InSettings) {
+            app.overlay.returnedFromSettings(Settings.canDrawOverlays(this))
+        }
         explainNotifications = shouldAskNotifications()
         if (sensorPermissions().all { checkSelfPermission(it) == PackageManager.PERMISSION_GRANTED }) {
             openPermissionSettings = false

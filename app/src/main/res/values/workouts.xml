@@ -1,4 +1,13 @@
 <resources>
+    <item type="id" name="overlay_pulse"/>
+    <string name="overlay_title">Heart rate overlay</string>
+    <string name="overlay_show">Show overlay</string>
+    <string name="overlay_hide">Hide overlay</string>
+    <string name="overlay_gestures">Drag the pulse window to move it. Pinch with two fingers to resize the window and its digits.</string>
+    <string name="overlay_settings">Open settings</string>
+    <string name="overlay_explanation">To see your pulse over the map, allow %1$s to display over other apps. If Android shows a list, select the app and turn on access.</string>
+    <string name="overlay_access_off">Display over other apps is off. Tap Show overlay to enable it.</string>
+    <string name="overlay_error">Could not open the heart rate window. Check overlay access in Android settings and try again.</string>
     <string name="workout_start">Start workout</string>
     <string name="workout_return">Return to workout</string>
     <string name="workout_history">History</string>

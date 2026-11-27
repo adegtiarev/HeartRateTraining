@@ -18,7 +18,9 @@ import androidx.compose.ui.unit.dp
 import arg.adegtiarev.heartratetraining.R
 import arg.adegtiarev.heartratetraining.sensor.SensorPhase
 import arg.adegtiarev.heartratetraining.workout.HistoryRide
+import arg.adegtiarev.heartratetraining.workout.OverlayPhase
 import arg.adegtiarev.heartratetraining.workout.WorkoutPhase
+import arg.adegtiarev.heartratetraining.workout.reading
 import java.text.DateFormat
 import java.util.Date
 import java.util.Locale
@@ -74,10 +76,11 @@ internal fun <T> WorkoutContent(load: WorkoutLoad<T>, retry: () -> Unit, content
 
 @Composable
 fun WorkoutScreen(live: LiveWorkout, legacyLocation: Boolean, onPause: () -> Unit, onResume: () -> Unit,
-    onFinish: () -> Unit, onRetry: () -> Unit, onBack: () -> Unit) {
+    onFinish: () -> Unit, onRetry: () -> Unit, onBack: () -> Unit, overlay: OverlayPhase?,
+    onShowOverlay: () -> Unit, onHideOverlay: () -> Unit, onOverlaySettings: () -> Unit) {
     val paused = live.ride.phase == WorkoutPhase.Paused
-    val zone = live.sensor.sample?.let { live.ride.zones?.zoneFor(it.bpm) }
-    val zoneColor = zone?.let { opaqueRgb(it.rgb) }
+    val reading = live.ride.reading(live.sensor.sample)
+    val zoneColor = reading.zone?.let { opaqueRgb(it.rgb) }
     val bg = zoneColor ?: MaterialTheme.colorScheme.background
     val fg = zoneColor?.let(::contrastingText) ?: MaterialTheme.colorScheme.onBackground
     Scaffold(containerColor = bg, contentColor = fg) { insets ->
@@ -85,7 +88,7 @@ fun WorkoutScreen(live: LiveWorkout, legacyLocation: Boolean, onPause: () -> Uni
             contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally) {
             item { RideHeader(stringResource(if (paused) R.string.workout_paused else R.string.workout_recording), onBack) }
-            item { PulseDisplay(live.sensor.sample, zone) }
+            item { PulseDisplay(reading.bpm, reading.zone) }
             item {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(stringResource(R.string.workout_active_time), style = MaterialTheme.typography.labelLarge)
@@ -107,7 +110,28 @@ fun WorkoutScreen(live: LiveWorkout, legacyLocation: Boolean, onPause: () -> Uni
                     Text(stringResource(R.string.workout_finish))
                 }
             }
+            item {
+                val visible = overlay == OverlayPhase.Visible
+                OutlinedButton(onClick = if (visible) onHideOverlay else onShowOverlay,
+                    enabled = overlay != OverlayPhase.Attaching && overlay != OverlayPhase.InSettings,
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = fg)) {
+                    Text(stringResource(if (visible) R.string.overlay_hide else R.string.overlay_show))
+                }
+            }
+            if (overlay == OverlayPhase.Visible) item {
+                Text(stringResource(R.string.overlay_gestures), style = MaterialTheme.typography.bodyMedium)
+            }
+            if (overlay == OverlayPhase.AccessDenied || overlay == OverlayPhase.WindowFailed) item {
+                Text(stringResource(if (overlay == OverlayPhase.AccessDenied) R.string.overlay_access_off else R.string.overlay_error))
+            }
         }
+    }
+    if (overlay == OverlayPhase.ExplainAccess) {
+        AlertDialog(onDismissRequest = onHideOverlay,
+            title = { Text(stringResource(R.string.overlay_title)) },
+            text = { Text(stringResource(R.string.overlay_explanation, stringResource(R.string.app_name))) },
+            confirmButton = { TextButton(onClick = onOverlaySettings) { Text(stringResource(R.string.overlay_settings)) } },
+            dismissButton = { TextButton(onClick = onHideOverlay) { Text(stringResource(R.string.cancel)) } })
     }
 }
 
