@@ -50,6 +50,7 @@ internal class PulseWindowText(context: Context) : TextView(context) {
     private val surface = GradientDrawable()
     private val usable = Rect()
     private val lastBounds = Rect()
+    private val digitBounds = Rect()
     private val margin get() = dp(8f)
     private val horizontal get() = OverlayTravel(usable.width(), params.width, margin)
     private val vertical get() = OverlayTravel(usable.height(), params.height, margin)
@@ -114,8 +115,8 @@ internal class PulseWindowText(context: Context) : TextView(context) {
         val scale = placement.scale
         val maxWidth = (usable.width() - 2 * margin).coerceAtLeast(1)
         val maxHeight = (usable.height() - 2 * margin).coerceAtLeast(1)
-        val padX = dp(10 * scale).coerceAtMost(maxWidth / 4)
-        val padY = dp(3 * scale).coerceAtMost(maxHeight / 4)
+        val padX = dp(16f * scale).coerceAtMost(maxWidth / 4)
+        val padY = dp(4.5f * scale).coerceAtMost(maxHeight / 4)
         setPadding(padX, padY, padX, padY)
         val base = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 30f, resources.displayMetrics) * scale
         setTextSize(TypedValue.COMPLEX_UNIT_PX, base)
@@ -125,7 +126,12 @@ internal class PulseWindowText(context: Context) : TextView(context) {
         val fit = minOf(1f, (maxWidth - 2 * padX) / textWidth, (maxHeight - 2 * padY) / textHeight)
         if (fit < 1f) setTextSize(TypedValue.COMPLEX_UNIT_PX, base * fit)
         params.width = maxOf(dp(48f), dp(64 * scale), ceil(textWidth * fit).toInt() + 2 * padX).coerceAtMost(maxWidth)
-        params.height = maxOf(dp(48f), dp(48 * scale), ceil(textHeight * fit).toInt() + 2 * padY).coerceAtMost(maxHeight)
+        // At large font sizes the line itself supplies part of the visible space around the digits.
+        paint.getTextBounds("8", 0, 1, digitBounds)
+        val lineHeight = textHeight * fit
+        val extraSpace = (lineHeight - digitBounds.height()) / 2
+        val paddedHeight = ceil(lineHeight + extraSpace).toInt() + 2 * padY
+        params.height = maxOf(dp(48f), dp(60f * scale), paddedHeight).coerceAtMost(maxHeight)
         surface.cornerRadius = dp(8 * scale).toFloat()
     }
 

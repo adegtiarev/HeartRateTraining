@@ -1,6 +1,6 @@
 # Implementation plan
 
-The app records workouts, shows live heart rate over a navigator and reopens saved rides from History. The next hardware check is a sustained ride with the chest strap to verify background recording, radio reconnection and the overlay on a physical phone.
+The app records workouts, shows live heart rate over a navigator and reopens saved rides from History. The rider completed a workout with a Pixel 6a and a Coospo H9Z. Targeted hardware checks remain for recording through screen lock and reconnecting to the strap with the navigator in front.
 
 ## 1. Read the chest strap
 
@@ -24,7 +24,7 @@ Settings opens from Home with or without a strap. Its five-row table shows each 
 
 Follow the [step 3 implementation plan](docs/step-03-record-workout.md) for the recording rules, Room draft lifecycle, foreground service and acceptance ride.
 
-**Implemented with synthetic emulator verification.** Recording, Pause, Resume, Finish, Save, Discard and draft recovery are available. Results includes mean and maximum BPM, a timeline with signal gaps and pauses, and time in the captured zones. The rider can record with unconfigured zones and review that ride's BPM and timeline. [Step 3 verification record](docs/step-03-record-workout.md#verification-record)
+**Implemented and verified with a saved ride on the Pixel 6a.** The on-device database contained the ride and its readings. Emulator tests cover Pause, Resume, Finish, Save, Discard and draft recovery. Results includes mean and maximum BPM, a timeline with signal gaps and pauses, and time in the captured zones. The rider can record with unconfigured zones and review that ride's BPM and timeline. [Step 3 verification record](docs/step-03-record-workout.md#verification-record)
 
 Place a large **Start workout** button on Home alongside access to **History** and **Settings**. Starting opens the workout screen with large live BPM, the current zone's background color, a workout timer and **Pause**. Capture the ride's boundaries and colors in a local Room draft and append timestamped readings during recording. Keep recording while the navigator is in front or the screen is off. A dropped signal leaves the timer running. Reconnect when possible and mark the gap.
 
@@ -47,7 +47,7 @@ The Pixel 6a kept receiving H9Z notifications during a short switch to Google Ma
 
 Follow the [step 4 implementation plan](docs/step-04-workout-overlay.md) for the permission flow, service-owned window and cross-app acceptance checks.
 
-**Implemented and verified on Android 10 and 17 emulators.** During recording or Pause, the rider can move the pulse window with one finger and pinch with two to resize both the window and digits. The app restores its size and relative position across workouts and after a cold launch. The foreground service colors the window using the ride's zone snapshot and removes it on Finish. The Pixel 6a and Coospo H9Z ride remains the physical acceptance check. [Step 4 verification record](docs/step-04-workout-overlay.md#verification-record)
+**Verified on Android 10 and 17 emulators and tested over Google Maps on the Pixel 6a.** During recording or Pause, the rider can move the pulse window with one finger and pinch with two to resize both the window and digits. The first-use scale is twice the original size, with more space around the digits. The app restores the rider's chosen scale and relative position across workouts and after a cold launch. The foreground service colors the window using the ride's zone snapshot and removes it on Finish. [Step 4 verification record](docs/step-04-workout-overlay.md#verification-record)
 
 Let the rider show or hide a compact window during a workout. Give the entire background the current zone color so the rider can recognize it at a glance. BPM is the only visible number. Include the zone in the accessibility description. Request overlay access when the rider first enables it.
 

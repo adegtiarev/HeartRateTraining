@@ -39,6 +39,7 @@ import arg.adegtiarev.heartratetraining.zones.ZoneConfiguration
 import arg.adegtiarev.heartratetraining.zones.ZoneSettings
 import java.io.File
 import kotlin.math.abs
+import kotlin.math.roundToInt
 import kotlinx.coroutines.*
 import org.junit.*
 import org.junit.Assert.*
@@ -104,7 +105,7 @@ class WorkoutOverlayWindowTest {
             ?.groupValues?.get(1) ?: "default"
         val positions = OverlayPlacementStore(app)
         originalPlacement = positions.read()
-        positions.save(OverlayPlacement())
+        app.getSharedPreferences("workout_overlay_placement", Context.MODE_PRIVATE).edit().clear().apply()
         val perms = if (Build.VERSION.SDK_INT >= 31) listOf(Manifest.permission.BLUETOOTH_CONNECT, Manifest.permission.BLUETOOTH_SCAN)
             else listOf(Manifest.permission.ACCESS_FINE_LOCATION)
         perms.forEach { automation.grantRuntimePermission(pkg, it) }
@@ -228,12 +229,18 @@ class WorkoutOverlayWindowTest {
         send(MotionEvent.ACTION_UP, 1f)
     }
 
-    private fun digitHeight(badge: Rect): Int {
+    private fun digitBounds(badge: Rect): Rect {
         val bitmap = checkNotNull(automation.takeScreenshot())
         return try {
-            (badge.top until badge.bottom).count { y ->
-                (badge.left + badge.width() / 5 until badge.right - badge.width() / 5).any { x -> bitmap.getPixel(x, y) == Color.WHITE }
+            val ink = Rect()
+            // Exclude pixels of the underlying map visible through the rounded corners.
+            val inset = minOf(badge.width(), badge.height()) / 12
+            for (y in badge.top + inset until badge.bottom - inset) {
+                for (x in badge.left + inset until badge.right - inset) {
+                    if (bitmap.getPixel(x, y) == Color.WHITE) ink.union(x, y, x + 1, y + 1)
+                }
             }
+            ink
         } finally { bitmap.recycle() }
     }
 
@@ -250,28 +257,32 @@ class WorkoutOverlayWindowTest {
         keepPulse(126)
         checkPixels(126, 3, Color.BLACK, Color.WHITE)
         val initial = awaitBounds("initial window ready") { true }
-        val originalInk = digitHeight(initial)
-        assertTrue(originalInk > 0)
-        val targetX = screen.width() / 3
+        val originalInk = digitBounds(initial)
+        assertFalse(originalInk.isEmpty)
+        assertEquals(2f, OverlayPlacementStore(app).read().scale, 0f)
+        val density = app.resources.displayMetrics.density
+        val sideInset = (30f * density).roundToInt()
+        assertTrue("First-use digits have room on both sides",
+            originalInk.left - initial.left >= sideInset && initial.right - originalInk.right >= sideInset)
+        assertTrue("First-use window reserves vertical space", initial.height() >= (120f * density).roundToInt())
+        val targetX = screen.width() / 2
         val targetY = screen.height() * 11 / 20
         fun atTarget(bounds: Rect) = abs(bounds.exactCenterX() - targetX) <= 5 && abs(bounds.exactCenterY() - targetY) <= 5
         drag(initial, targetX, targetY)
         val moved = awaitBounds("drag ended at ($targetX, $targetY)", ::atTarget)
-        val span = moved.width() * 0.35f
-        automation.pinch(moved, span, span * 2)
-        val large = awaitBounds("pinch enlarged the window around its midpoint") {
-            it.width() > moved.width() * 1.7 && it.height() > moved.height() * 1.7 && atTarget(it)
+        val span = moved.width() * 0.5f
+        automation.pinch(moved, span, span / 2)
+        val small = awaitBounds("pinch halved the window around its midpoint") {
+            abs(it.width() - moved.width() / 2f) <= 4 && abs(it.height() - moved.height() / 2f) <= 4 && atTarget(it)
         }
         checkPixels(126, 3, Color.BLACK, Color.WHITE)
-        val largeInk = digitHeight(large)
-        assertTrue("Digits grew with the window", largeInk > originalInk * 1.6)
-        assertEquals(moved.exactCenterX().toDouble(), large.exactCenterX().toDouble(), 6.0)
-        assertEquals(moved.exactCenterY().toDouble(), large.exactCenterY().toDouble(), 6.0)
-        automation.pinch(large, span * 2, span * 1.5f)
-        val resized = awaitBounds("pinch reduced the window around its midpoint") {
-            abs(it.width() - moved.width() * 1.5f) <= 4 && atTarget(it)
+        val smallInk = digitBounds(small).height()
+        assertTrue("Digits shrank with the window", smallInk in 1 until (originalInk.height() * 0.6f).toInt())
+        automation.pinch(small, span / 2, span * 0.75f)
+        val resized = awaitBounds("pinch enlarged the window around its midpoint") {
+            abs(it.width() - moved.width() * 0.75f) <= 4 && atTarget(it)
         }
-        assertTrue("Digits shrank with the window", digitHeight(resized) in (originalInk + 1) until largeInk)
+        assertTrue("Digits grew with the window", digitBounds(resized).height() in (smallInk + 1) until originalInk.height())
         val saved = resized
         val preferences = OverlayPlacementStore(app).read()
         assertEquals(1.5f, preferences.scale, 0.04f)

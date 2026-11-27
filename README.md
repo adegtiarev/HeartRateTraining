@@ -20,7 +20,7 @@ Tap **Start workout** on Home. The workout screen shows live pulse and active ti
 
 Start a workout and tap **Show overlay**. The first time, tap **Open settings** and allow the app to display over other apps. If Android shows a list, select Heart Rate Training. Return to Workout, then open your navigator. The window shows live BPM on the current zone's color. TalkBack can read the BPM and zone together.
 
-The window first opens in the upper-right corner. Drag it with one finger to leave your map controls clear. Start with two fingertips on the window and spread them to enlarge the window and digits, or pinch them together to make both smaller. The app remembers the position and size when you hide the window, start another workout or restart the app. Rotating the phone keeps the window in the same relative part of the screen.
+The window first opens in the upper-right corner with large digits. Drag it with one finger to leave your map controls clear. Start with two fingertips on the window and spread them to enlarge the window and digits, or pinch them together to make both smaller. The app remembers the position and size when you hide the window, start another workout or restart the app. Rotating the phone keeps the window in the same relative part of the screen.
 
 If the ride began with unconfigured zones, the digits appear on black. A white dash on black means the app is waiting for a fresh reading. The window keeps showing live pulse during Pause. To hide it, return to Workout from the notification or from Home and tap **Hide overlay**. Recording continues. **Finish** removes the window, and each new ride starts with it hidden.
 
