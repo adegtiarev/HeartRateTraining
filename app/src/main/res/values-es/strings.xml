@@ -46,4 +46,8 @@
     <string name="heart_sensor_id">Sensor de pulso · %1$s</string>
     <string name="device_id">Dispositivo Bluetooth · %1$s</string>
     <string name="storage_error">No se pudo leer o guardar el sensor en este teléfono.</string>
+    <string name="strap_battery_label">Batería</string>
+    <string name="strap_battery_level">Batería del sensor al %1$s</string>
+    <string name="strap_battery_low">Batería del sensor baja, %1$s</string>
+    <string name="overlay_low_battery">%1$s. Batería del sensor baja.</string>
 </resources>

@@ -26,12 +26,19 @@ data class SensorState(
     val nearby: List<NearbyStrap> = emptyList(),
     val sample: PulseSample? = null,
     val storageError: Boolean = false,
-)
+    val batteryPercent: Int? = null,
+) {
+    val hasLowBattery: Boolean get() = batteryPercent in 0..9
+}
 
 sealed interface SensorEvent {
     data object Subscribed : SensorEvent
     data class Measurement(val value: HeartRateMeasurement, val receivedAtMs: Long) : SensorEvent
+    data class BatteryLevel(val percent: Int) : SensorEvent
 }
+
+internal fun decodeBatteryPercent(bytes: ByteArray): Int? =
+    bytes.singleOrNull()?.toUByte()?.toInt()?.takeIf { it <= 100 }
 
 interface SensorTransport {
     fun access(): SensorAccess

@@ -42,6 +42,10 @@
     <string name="find_strap">Find chest strap</string>
     <string name="retry">Retry</string>
     <string name="unnamed_sensor">Unnamed device</string>
+    <string name="strap_battery_label">Battery</string>
+    <string name="strap_battery_level">Sensor battery %1$s</string>
+    <string name="strap_battery_low">Sensor battery low, %1$s</string>
+    <string name="overlay_low_battery">%1$s. Sensor battery low.</string>
     <string name="heart_sensor_id">Heart rate sensor · %1$s</string>
     <string name="device_id">Bluetooth device · %1$s</string>
     <string name="storage_error">Could not access the saved strap on this phone.</string>

@@ -80,10 +80,11 @@ fun HomeScreen(
                 Text(stringResource(workoutError))
                 if (workoutError == R.string.workout_storage_error) SecondaryAction(R.string.retry, onRetryWorkout)
             }
-            item { Text(stringResource(statusText(state, legacyLocation)), style = MaterialTheme.typography.bodyLarge) }
-            val strapName = (state.active ?: state.remembered)?.name
-            if (strapName != null && !picker) {
-                item { Text(strapName, style = MaterialTheme.typography.labelLarge) }
+            item {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(stringResource(statusText(state, legacyLocation)), style = MaterialTheme.typography.bodyLarge)
+                    if (!picker) StrapDetails(state)
+                }
             }
             if (state.storageError) {
                 item { Text(stringResource(R.string.storage_error)) }

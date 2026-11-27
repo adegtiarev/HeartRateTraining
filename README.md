@@ -6,6 +6,8 @@ Heart Rate Training is an Android app for recording rides with a Bluetooth chest
 
 Put on the strap, open the app and grant access to nearby devices. Android 10 and 11 request location access for discovery. Tap **Find chest strap** and choose your device. Home shows live BPM as soon as the first measurement arrives. A dash appears if readings stop or the sensor reports poor contact. The app remembers the last working strap and looks for it on the next launch.
 
+If the connected strap reports its battery level, Home and Workout show the percentage next to its name. Below 10%, the percentage blinks twice per second. Disconnecting the strap clears the battery reading.
+
 **Disconnect** releases the strap for the rest of the current visit. Use **Connect** to reconnect manually or **Choose another strap** to select a replacement. Open **Zone settings** to color Home by heart rate, including before pairing a strap. The interface is available in English, Russian and Spanish.
 
 ## Record and review a ride
@@ -23,6 +25,8 @@ Start a workout and tap **Show overlay**. The first time, tap **Open settings** 
 The window first opens in the upper-right corner with large digits. Drag it with one finger to leave your map controls clear. Start with two fingertips on the window and spread them to enlarge the window and digits, or pinch them together to make both smaller. The app remembers the position and size when you hide the window, start another workout or restart the app. Rotating the phone keeps the window in the same relative part of the screen.
 
 If the ride began with unconfigured zones, the digits appear on black. A white dash on black means the app is waiting for a fresh reading. The window keeps showing live pulse during Pause. To hide it, return to Workout from the notification or from Home and tap **Hide overlay**. Recording continues. **Finish** removes the window, and each new ride starts with it hidden.
+
+When the strap battery drops below 10%, the overlay alternates between its usual background and white twice per second. A white zone alternates with black so the warning stays visible. The digits keep their contrast in both phases. At 10% or higher the background stays steady.
 
 ## Planned rider workflow
 

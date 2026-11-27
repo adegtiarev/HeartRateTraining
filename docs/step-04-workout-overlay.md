@@ -14,6 +14,8 @@
 
 Use the repository's five-second freshness rule. Each valid reading restarts the timeout, including a repeat of the same BPM. A disconnect or reported contact loss clears the reading immediately. Before drawing on Show or after the display wakes, have the repository recheck the sample's age against its monotonic clock. During Pause the overlay follows fresh readings while active time and the stored sample count stay fixed.
 
+Below 10% strap battery, the overlay alternates its normal background with white every 250 ms throughout recording and Pause. For a pure white zone the alternate color is black. Each phase uses contrasting digits. TalkBack includes a steady low-battery warning alongside the reading. Reaching 10%, losing the connection or hiding the window stops the flashing.
+
 ## 2. Enable the overlay from Workout
 
 Start each ride with the overlay hidden. Keep the rider's choice in memory for that ride ID. Android stores the separate permission to draw over other apps. Add **Show overlay** and **Hide overlay** to the recording and paused states of Workout. The notification and Home's return action already provide routes back to these controls. [Workout navigation](../app/src/main/java/arg/adegtiarev/heartratetraining/ui/HeartRateScreens.kt)
@@ -70,6 +72,7 @@ November 27, 2026.
 - On Android 17, the system stopped the workout process after three synthetic readings of 120, 135 and 150 BPM, with the window moved and enlarged to 150%. A cold launch opened Results with a mean of 135 BPM, a maximum of 150 BPM and the window closed. After Discard, the next workout restored the exact same screen rectangle when the rider tapped **Show overlay**.
 - On the Pixel 6a, the original and updated views rendered the same synthetic reading of 126 at the phone's existing font setting. First-use digit height went from 58 to 116 pixels. At a fixed scale of 2.0, the mean gap on the left and right grew from 63 to 94 pixels and the mean gap above and below grew from 68 to 100 pixels. Updating the app preserved the saved scale and ride.
 - The updated window passed the drag and pinch test over Google Maps on the physical Pixel 6a using synthetic readings and an in-memory workout. It kept the chosen size through rotation, Hide/Show and a second workout. All five overlay tests passed on the Android 17 emulator, and the gesture and padding checks also passed at 200% system font size.
+- A synthetic 10% → 9% → 10% battery sequence drove the real overlay on the Pixel with Google Maps in front. Pixel sampling confirmed green and white backgrounds in a green zone, black and white backgrounds in a white zone, and the contrasting digit color in each phase. Returning to 10% cleared the low-battery description and restored the zone color.
 
 To repeat the overlay checks on a single emulator with the debug app and test APKs installed, run the following command. To exercise Google Maps, open it once and respond to any location permission prompt. Android hides overlays over that dialog. Add `-e openMaps true` before the runner name to run the checks over the map.
 

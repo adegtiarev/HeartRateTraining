@@ -134,12 +134,13 @@ class WorkoutOverlayWindowTest {
         mode(original)
     }
 
-    private fun expectReading(bpm: Int?, zone: Int? = null): Rect {
+    private fun expectReading(bpm: Int?, zone: Int? = null, lowBattery: Boolean = false): Rect {
         val res = app.resources
         val digits = if (bpm == null) res.getString(R.string.no_reading) else res.getString(R.string.number, bpm)
         val pulse = if (bpm == null) res.getString(R.string.no_reading_description)
             else res.getQuantityString(R.plurals.pulse_description, bpm, bpm)
-        val description = if (zone == null) pulse else res.getString(R.string.zone_reading, pulse, res.getString(R.string.zone_number, zone))
+        val reading = if (zone == null) pulse else res.getString(R.string.zone_reading, pulse, res.getString(R.string.zone_number, zone))
+        val description = if (lowBattery) res.getString(R.string.overlay_low_battery, reading) else reading
         val bounds = Rect()
         waitFor("one overlay showing $description") {
             val node = windows().singleOrNull() ?: return@waitFor false
@@ -150,8 +151,8 @@ class WorkoutOverlayWindowTest {
         return bounds
     }
 
-    private fun checkPixels(bpm: Int, zone: Int?, background: Int, ink: Int, capture: Boolean = false) {
-        expectReading(bpm, zone)
+    private fun checkPixels(bpm: Int, zone: Int?, background: Int, ink: Int, capture: Boolean = false, lowBattery: Boolean = false) {
+        expectReading(bpm, zone, lowBattery)
         val digits = app.getString(R.string.number, bpm)
         waitFor("opaque background and contrasting digits") {
             val node = windows().singleOrNull() ?: return@waitFor false
@@ -171,6 +172,33 @@ class WorkoutOverlayWindowTest {
                 painted
             } finally { bitmap.recycle() }
         }
+    }
+
+    @Test fun lowBatteryFlashesOverTheNavigatorAndStopsAtTenPercent() {
+        fun battery(percent: Int) { check(app.packets.tryEmit(SensorEvent.BatteryLevel(percent))) }
+        mode("allow")
+        start()
+        click(R.string.overlay_show)
+        if (args.getString("openMaps") == "true") {
+            shell("am start -W -a android.intent.action.MAIN -c android.intent.category.LAUNCHER -p com.google.android.apps.maps")
+            waitFor("Maps in front") { automation.rootInActiveWindow?.packageName == "com.google.android.apps.maps" }
+        } else openSurface(false)
+        val green = Color.rgb(0x00, 0x66, 0x33)
+        keepPulse(125)
+        battery(10)
+        checkPixels(125, 2, green, Color.WHITE)
+        battery(9)
+        checkPixels(125, 2, Color.WHITE, Color.BLACK, lowBattery = true)
+        checkPixels(125, 2, green, Color.WHITE, lowBattery = true)
+        steadyReadings?.cancel()
+        keepPulse(144) // This ride has a white zone.
+        checkPixels(144, 4, Color.BLACK, Color.WHITE, lowBattery = true)
+        checkPixels(144, 4, Color.WHITE, Color.BLACK, lowBattery = true)
+        battery(10)
+        checkPixels(144, 4, Color.WHITE, Color.BLACK)
+        returnToWorkout()
+        click(R.string.overlay_hide)
+        waitFor("battery warning removed with the window") { windows().isEmpty() }
     }
 
     private fun openSurface(suppress: Boolean) {

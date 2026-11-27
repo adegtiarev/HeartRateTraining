@@ -47,4 +47,8 @@
     <string name="heart_sensor_id">Датчик пульса · %1$s</string>
     <string name="device_id">Bluetooth-устройство · %1$s</string>
     <string name="storage_error">Не удалось прочитать или сохранить выбор датчика на телефоне.</string>
+    <string name="strap_battery_label">Заряд</string>
+    <string name="strap_battery_level">Заряд датчика %1$s</string>
+    <string name="strap_battery_low">Низкий заряд датчика, %1$s</string>
+    <string name="overlay_low_battery">%1$s. Низкий заряд датчика.</string>
 </resources>

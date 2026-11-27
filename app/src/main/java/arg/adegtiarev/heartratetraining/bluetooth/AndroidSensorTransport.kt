@@ -13,6 +13,8 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.location.LocationManager
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.os.SystemClock
 import androidx.core.content.ContextCompat
 import arg.adegtiarev.heartratetraining.sensor.*
@@ -24,10 +26,14 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.buffer
 import no.nordicsemi.android.ble.BleManager
 import no.nordicsemi.android.ble.callback.FailCallback
+import no.nordicsemi.android.ble.data.Data
 import no.nordicsemi.android.ble.observer.ConnectionObserver
 
 private val HEART_RATE_SERVICE = UUID.fromString("0000180d-0000-1000-8000-00805f9b34fb")
 private val HEART_RATE_MEASUREMENT = UUID.fromString("00002a37-0000-1000-8000-00805f9b34fb")
+private val BATTERY_SERVICE = UUID.fromString("0000180f-0000-1000-8000-00805f9b34fb")
+private val BATTERY_LEVEL = UUID.fromString("00002a19-0000-1000-8000-00805f9b34fb")
+private const val BATTERY_READ_INTERVAL_MS = 60_000L
 
 fun sensorPermissions(): Array<String> = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
     arrayOf(Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT)
@@ -119,6 +125,15 @@ private class HeartRateManager(
     private val fail: (SensorPhase) -> Unit,
 ) : BleManager(context) {
     private var measurement: BluetoothGattCharacteristic? = null
+    private var batteryLevel: BluetoothGattCharacteristic? = null
+    private val handler = Handler(Looper.getMainLooper())
+    private val pollBattery = object : Runnable {
+        override fun run() {
+            val level = batteryLevel ?: return
+            readCharacteristic(level).with { _, data -> reportBattery(data) }.enqueue()
+            handler.postDelayed(this, BATTERY_READ_INTERVAL_MS)
+        }
+    }
 
     init {
         setConnectionObserver(object : ConnectionObserver {
@@ -140,6 +155,11 @@ private class HeartRateManager(
         return properties and BluetoothGattCharacteristic.PROPERTY_NOTIFY != 0
     }
 
+    override fun isOptionalServiceSupported(gatt: BluetoothGatt): Boolean {
+        batteryLevel = gatt.getService(BATTERY_SERVICE)?.getCharacteristic(BATTERY_LEVEL)
+        return batteryLevel != null
+    }
+
     override fun initialize() {
         setNotificationCallback(measurement).with { _, data ->
             val receivedAt = SystemClock.elapsedRealtime()
@@ -147,13 +167,44 @@ private class HeartRateManager(
             if (value != null) emit(SensorEvent.Measurement(value, receivedAt))
         }
         enableNotifications(measurement)
-            .done { emit(SensorEvent.Subscribed) }
+            .done {
+                emit(SensorEvent.Subscribed)
+                batteryLevel?.let(::observeBattery)
+            }
             .fail { _, _ -> fail(SensorPhase.SubscriptionFailed) }
             .invalid { fail(SensorPhase.SubscriptionFailed) }
             .enqueue()
     }
 
+    private fun observeBattery(level: BluetoothGattCharacteristic) {
+        if (level.properties and BluetoothGattCharacteristic.PROPERTY_READ != 0) pollBattery.run()
+        val subscription = when {
+            level.properties and BluetoothGattCharacteristic.PROPERTY_NOTIFY != 0 -> enableNotifications(level)
+            level.properties and BluetoothGattCharacteristic.PROPERTY_INDICATE != 0 -> enableIndications(level)
+            else -> return
+        }
+        // Nordic dispatches both notifications and indications through this callback.
+        setNotificationCallback(level).with { _, data ->
+            if (reportBattery(data)) handler.removeCallbacks(pollBattery)
+        }
+        subscription.enqueue()
+    }
+
+    private fun reportBattery(data: Data): Boolean {
+        val percent = data.value?.let(::decodeBatteryPercent) ?: return false
+        emit(SensorEvent.BatteryLevel(percent))
+        return true
+    }
+
     override fun onServicesInvalidated() {
         measurement = null
+        batteryLevel = null
+        handler.removeCallbacks(pollBattery)
+    }
+
+    override fun close() {
+        batteryLevel = null
+        handler.removeCallbacks(pollBattery)
+        super.close()
     }
 }

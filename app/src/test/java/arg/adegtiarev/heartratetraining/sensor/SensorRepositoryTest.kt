@@ -67,6 +67,47 @@ class SensorRepositoryTest {
         }
     }
 
+    @Test fun batteryAcceptsOnlyOneUnsignedPercentage() {
+        for (percent in listOf(0, 9, 10, 100)) assertEquals(percent, decodeBatteryPercent(byteArrayOf(percent.toByte())))
+        assertNull(decodeBatteryPercent(byteArrayOf()))
+        assertNull(decodeBatteryPercent(byteArrayOf(9, 0)))
+        assertNull(decodeBatteryPercent(byteArrayOf(101)))
+        assertNull(decodeBatteryPercent(byteArrayOf(0xff.toByte())))
+    }
+
+    @Test fun batteryBelongsToTheCurrentConnectionAndDoesNotRefreshPulse() = runTest {
+        val rig = Rig(this)
+        rig.launch()
+        rig.repo.select(strap)
+        runCurrent()
+        rig.event(SensorEvent.Subscribed)
+        rig.packet(0, 72)
+        assertNull(rig.state.batteryPercent)
+        rig.event(SensorEvent.BatteryLevel(10))
+        assertFalse(rig.state.hasLowBattery)
+        advanceTimeBy(4_000)
+        rig.event(SensorEvent.BatteryLevel(9))
+        assertTrue(rig.state.hasLowBattery)
+        advanceTimeBy(1_000)
+        runCurrent()
+        assertNull(rig.state.sample)
+        assertEquals(9, rig.state.batteryPercent)
+        val old = rig.transport.notifications
+        old.close(SensorFailure(SensorPhase.ConnectionFailed))
+        runCurrent()
+        assertNull(rig.state.batteryPercent)
+        rig.repo.select(other)
+        runCurrent()
+        rig.event(SensorEvent.Subscribed)
+        assertNull(rig.state.batteryPercent)
+        rig.event(SensorEvent.BatteryLevel(0))
+        assertTrue(rig.state.hasLowBattery)
+        rig.event(SensorEvent.BatteryLevel(10))
+        assertFalse(rig.state.hasLowBattery)
+        rig.repo.disconnect()
+        assertNull(rig.state.batteryPercent)
+    }
+
     @Test fun blackZoneReadingExpiresAtFiveSecondsAndOnWake() = runTest {
         val rig = Rig(this)
         val ride = Workout("fixture", 0, ZoneConfiguration.create(listOf(108, 126, 144, 162),
@@ -194,9 +235,11 @@ class SensorRepositoryTest {
         runCurrent()
         oldConnection.trySend(SensorEvent.Subscribed)
         oldConnection.trySend(SensorEvent.Measurement(HeartRateMeasurement.Pulse(99), 0))
+        oldConnection.trySend(SensorEvent.BatteryLevel(4))
         runCurrent()
         assertNull(rig.saved)
         assertNull(rig.state.sample)
+        assertNull(rig.state.batteryPercent)
         rig.event(SensorEvent.Subscribed)
         rig.packet(0, 72)
         rig.transport.notifications.close(SensorFailure(SensorPhase.ConnectionFailed))

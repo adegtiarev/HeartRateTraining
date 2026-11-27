@@ -95,7 +95,12 @@ fun WorkoutScreen(live: LiveWorkout, legacyLocation: Boolean, onPause: () -> Uni
                     Text(durationText(live.activeMs), style = MaterialTheme.typography.displayMedium)
                 }
             }
-            item { Text(stringResource(statusText(live.sensor, legacyLocation))) }
+            item {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(stringResource(statusText(live.sensor, legacyLocation)))
+                    StrapDetails(live.sensor)
+                }
+            }
             if (live.sensor.phase in setOf(SensorPhase.Absent, SensorPhase.ConnectionFailed, SensorPhase.ScanFailed)) {
                 item { TextButton(onClick = onRetry) { Text(stringResource(R.string.retry)) } }
             }

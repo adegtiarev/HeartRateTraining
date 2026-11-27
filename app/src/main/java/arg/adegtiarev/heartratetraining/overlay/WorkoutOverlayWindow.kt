@@ -9,12 +9,14 @@ import android.util.Log
 import android.view.Display
 import android.view.WindowManager
 import arg.adegtiarev.heartratetraining.sensor.SensorRepository
+import arg.adegtiarev.heartratetraining.ui.batteryAlertPhases
 import arg.adegtiarev.heartratetraining.workout.OverlayPhase
 import arg.adegtiarev.heartratetraining.workout.Workout
 import arg.adegtiarev.heartratetraining.workout.WorkoutOverlay
 import arg.adegtiarev.heartratetraining.workout.reading
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -64,7 +66,12 @@ internal class WorkoutOverlayWindow(
             attached = view
             overlay.attached(ride.id)
             readings = scope.launch {
-                sensors.state.map { ride.reading(it.sample) }.distinctUntilChanged().collect(view::showReading)
+                launch {
+                    sensors.state.map { ride.reading(it.sample) }.distinctUntilChanged().collect(view::showReading)
+                }
+                sensors.state.map { it.hasLowBattery }.distinctUntilChanged().collectLatest { low ->
+                    batteryAlertPhases(low).collect(view::showBatteryAlert)
+                }
             }
         } catch (error: RuntimeException) {
             Log.w("WorkoutOverlay", "Unable to attach the pulse window", error)

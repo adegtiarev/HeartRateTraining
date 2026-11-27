@@ -164,7 +164,7 @@ class SensorRepository(
     private fun resetOperation() {
         operation?.cancel()
         expiry?.cancel()
-        current = current.copy(phase = SensorPhase.Idle, sample = null, nearby = emptyList(), active = null)
+        current = current.copy(phase = SensorPhase.Idle, sample = null, batteryPercent = null, nearby = emptyList(), active = null)
     }
 
     private fun startOperation(block: suspend () -> Unit) {
@@ -180,13 +180,13 @@ class SensorRepository(
                 connectionLock.withLock { block() }
             } catch (failure: SensorFailure) {
                 currentCoroutineContext().ensureActive()
-                current = current.copy(phase = failure.phase, sample = null)
+                current = current.copy(phase = failure.phase, sample = null, batteryPercent = null)
                 if (transport.access() != SensorAccess.Ready) refresh()
             } catch (_: SecurityException) {
                 currentCoroutineContext().ensureActive()
                 autoConnectPending = current.active != null
                 current = current.copy(access = SensorAccess.PermissionNeeded, phase = SensorPhase.Idle,
-                    active = null, sample = null, nearby = emptyList())
+                    active = null, sample = null, batteryPercent = null, nearby = emptyList())
             }
         }
     }
@@ -213,8 +213,11 @@ class SensorRepository(
                     when (event) {
                         SensorEvent.Subscribed -> {
                             subscribed = true
-                            current = current.copy(phase = SensorPhase.Waiting)
+                            current = current.copy(phase = SensorPhase.Waiting, batteryPercent = null)
                             remember(target)
+                        }
+                        is SensorEvent.BatteryLevel -> if (subscribed) {
+                            current = current.copy(batteryPercent = event.percent)
                         }
                         is SensorEvent.Measurement -> if (subscribed) {
                             receive(event)
@@ -229,7 +232,7 @@ class SensorRepository(
             } catch (failure: SensorFailure) {
                 currentCoroutineContext().ensureActive()
                 expiry?.cancel()
-                current = current.copy(sample = null)
+                current = current.copy(sample = null, batteryPercent = null)
                 if (failure.phase != SensorPhase.ConnectionFailed) throw failure
                 if (recorder != null && transport.access() == SensorAccess.Ready) {
                     if (retries >= 4) throw failure

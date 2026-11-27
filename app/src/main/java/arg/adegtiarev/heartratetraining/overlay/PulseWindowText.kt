@@ -15,8 +15,10 @@ import android.view.View
 import android.view.WindowInsets
 import android.view.WindowManager
 import android.widget.TextView
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import arg.adegtiarev.heartratetraining.R
+import arg.adegtiarev.heartratetraining.ui.BatteryAlertPhase
 import arg.adegtiarev.heartratetraining.ui.contrastingText
 import arg.adegtiarev.heartratetraining.ui.opaqueRgb
 import arg.adegtiarev.heartratetraining.ui.pulseDescription
@@ -27,6 +29,9 @@ import kotlin.math.roundToInt
 
 internal class PulseWindowText(context: Context) : TextView(context) {
     private var reading = WorkoutReading(null, null)
+    private var batteryAlert = BatteryAlertPhase.Inactive
+    // A display window can have the system locale even when the rider chose an app language.
+    private val labels get() = context.applicationContext.resources
     var onWindowFailure: (() -> Unit)? = null
     private val manager = context.getSystemService(WindowManager::class.java)
     private val store = OverlayPlacementStore(context)
@@ -72,6 +77,14 @@ internal class PulseWindowText(context: Context) : TextView(context) {
         render()
     }
 
+    fun showBatteryAlert(next: BatteryAlertPhase) {
+        if (next == batteryAlert) return
+        val warningChanged = batteryAlert == BatteryAlertPhase.Inactive || next == BatteryAlertPhase.Inactive
+        batteryAlert = next
+        updateColors()
+        if (warningChanged) updateDescription()
+    }
+
     fun refreshConfiguration() {
         readUsableSize()
         params.title = context.applicationContext.getString(R.string.overlay_title)
@@ -79,15 +92,28 @@ internal class PulseWindowText(context: Context) : TextView(context) {
     }
 
     private fun render() {
-        val color = opaqueRgb(reading.zone?.rgb ?: 0)
-        surface.setColor(color.toArgb())
-        setTextColor(contrastingText(color).toArgb())
-        // A display window can have the system locale even when the rider chose an app language.
-        val labels = context.applicationContext.resources
+        updateColors()
         text = labels.pulseNumber(reading.bpm)
-        contentDescription = labels.pulseDescription(reading.bpm, reading.zone)
+        updateDescription()
         sizeToContent()
         place()
+    }
+
+    private fun updateColors() {
+        val base = opaqueRgb(reading.zone?.rgb ?: 0)
+        val color = when {
+            batteryAlert != BatteryAlertPhase.Flash -> base
+            base == Color.White -> Color.Black
+            else -> Color.White
+        }
+        surface.setColor(color.toArgb())
+        setTextColor(contrastingText(color).toArgb())
+    }
+
+    private fun updateDescription() {
+        val pulse = labels.pulseDescription(reading.bpm, reading.zone)
+        contentDescription = if (batteryAlert == BatteryAlertPhase.Inactive) pulse
+            else labels.getString(R.string.overlay_low_battery, pulse)
     }
 
     private fun dp(value: Float) = (value * resources.displayMetrics.density).roundToInt()
