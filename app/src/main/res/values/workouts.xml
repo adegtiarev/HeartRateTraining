@@ -1,0 +1,43 @@
+<resources>
+    <string name="workout_start">Start workout</string>
+    <string name="workout_return">Return to workout</string>
+    <string name="workout_history">History</string>
+    <string name="workout_results">Workout results</string>
+    <string name="workout_recording">Recording workout</string>
+    <string name="workout_paused">Workout paused</string>
+    <string name="workout_active_time">Active time</string>
+    <string name="workout_pause">Pause</string>
+    <string name="workout_resume">Resume</string>
+    <string name="workout_finish">Finish</string>
+    <string name="workout_discard">Discard</string>
+    <string name="workout_channel">Workout recording</string>
+    <string name="workout_notification_open">Tap to open your workout</string>
+    <string name="workout_notification_permission">Allow notifications to return to your workout from another app.</string>
+    <string name="workout_service_error">Could not start recording. Check Bluetooth access and try again.</string>
+    <string name="workout_storage_error">Could not access workout data. Try again.</string>
+    <string name="workout_loading">Loading workout data…</string>
+    <string name="workout_back">Back</string>
+    <string name="workout_history_empty">Saved workouts will appear here.</string>
+    <string name="workout_average">Average heart rate</string>
+    <string name="workout_maximum">Maximum heart rate</string>
+    <string name="workout_avg_short">Average HR %1$s</string>
+    <string name="workout_bpm">%1$d BPM</string>
+    <string name="workout_chart">Heart rate over time</string>
+    <string name="workout_zone_times">Time in zones</string>
+    <string name="workout_zone_share">Percent of measured time</string>
+    <string name="workout_less_than">&lt;%1$s</string>
+    <string name="workout_zone_reached">Reached</string>
+    <string name="workout_no_zones">Zones were not set when this workout started.</string>
+    <string name="workout_no_samples">No heart rate measurements were recorded.</string>
+    <string name="workout_gap">Signal loss</string>
+    <string name="workout_chart_description">%1$s. %2$s · %3$s</string>
+    <string name="workout_duration_label">Active time %1$s</string>
+    <plurals name="workout_pauses">
+        <item quantity="one">%d pause</item>
+        <item quantity="other">%d pauses</item>
+    </plurals>
+    <plurals name="workout_gaps">
+        <item quantity="one">%d signal gap</item>
+        <item quantity="other">%d signal gaps</item>
+    </plurals>
+</resources>

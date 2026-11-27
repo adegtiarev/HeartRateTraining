@@ -37,6 +37,13 @@ fun HomeScreen(
     onSelect: (Strap) -> Unit,
     onZoneSettings: () -> Unit,
     onRetryZones: () -> Unit,
+    onStart: () -> Unit,
+    onHistory: () -> Unit,
+    workoutAction: Int = R.string.workout_start,
+    startEnabled: Boolean = true,
+    workoutError: Int? = null,
+    onRetryWorkout: () -> Unit = {},
+    explainNotifications: Boolean = false,
 ) {
     val state = home.sensor
     val zoneColor = home.zone?.let { opaqueRgb(it.rgb) }
@@ -56,6 +63,22 @@ fun HomeScreen(
                 Text(stringResource(R.string.heart_rate), style = MaterialTheme.typography.headlineMedium)
             }
             item { PulseDisplay(state.sample, home.zone) }
+            if (!picker) item {
+                Button(onClick = onStart, enabled = startEnabled,
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)) { Text(stringResource(workoutAction)) }
+                if (explainNotifications) Text(stringResource(R.string.workout_notification_permission),
+                    style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 6.dp))
+            }
+            item {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                    SecondaryAction(R.string.workout_history, onHistory)
+                    SecondaryAction(R.string.zone_settings, onZoneSettings)
+                }
+            }
+            if (workoutError != null) item {
+                Text(stringResource(workoutError))
+                if (workoutError == R.string.workout_storage_error) SecondaryAction(R.string.retry, onRetryWorkout)
+            }
             item { Text(stringResource(statusText(state, legacyLocation)), style = MaterialTheme.typography.bodyLarge) }
             val strapName = (state.active ?: state.remembered)?.name
             if (strapName != null && !picker) {
@@ -68,7 +91,6 @@ fun HomeScreen(
                 item { Text(stringResource(R.string.zone_read_error)) }
                 item { SecondaryAction(R.string.retry, onRetryZones) }
             }
-            item { SecondaryAction(R.string.zone_settings, onZoneSettings) }
             item {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     when (state.access) {
@@ -120,7 +142,7 @@ fun HomeScreen(
 }
 
 @Composable
-private fun PulseDisplay(sample: PulseSample?, zone: HeartRateZone?) {
+internal fun PulseDisplay(sample: PulseSample?, zone: HeartRateZone?) {
     val reading = if (sample == null) stringResource(R.string.no_reading) else stringResource(R.string.number, sample.bpm)
     val pulse = if (sample == null) stringResource(R.string.no_reading_description)
         else pluralStringResource(R.plurals.pulse_description, sample.bpm, sample.bpm)
@@ -166,7 +188,7 @@ internal fun contrastingText(background: Color): Color {
 }
 
 @StringRes
-private fun statusText(state: SensorState, legacyLocation: Boolean): Int = when (state.access) {
+internal fun statusText(state: SensorState, legacyLocation: Boolean): Int = when (state.access) {
     SensorAccess.Checking -> R.string.checking
     SensorAccess.Unavailable -> R.string.ble_unavailable
     SensorAccess.PermissionNeeded -> if (legacyLocation) R.string.permission_location else R.string.permission_nearby

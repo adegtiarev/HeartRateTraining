@@ -4,7 +4,10 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.ksp)
 }
+
+ksp { arg("room.schemaLocation", "$projectDir/schemas") }
 
 android {
     namespace = "arg.adegtiarev.heartratetraining"
@@ -21,7 +24,7 @@ android {
         versionCode = 1
         versionName = "1.0"
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner = "arg.adegtiarev.heartratetraining.WorkoutTestRunner"
     }
 
     buildTypes {
@@ -48,6 +51,8 @@ kotlin {
 }
 
 dependencies {
+    implementation(libs.androidx.room.runtime)
+    ksp(libs.androidx.room.compiler)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.material3)

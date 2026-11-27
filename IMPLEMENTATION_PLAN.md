@@ -1,6 +1,6 @@
 # Implementation plan
 
-The first release should let a cyclist start a ride, switch to a navigator, see live heart rate over the map, and later review the saved ride. Live sensor preview and configurable heart rate zones are implemented in the Compose app. Milestone 3 is next.
+The first release should let a cyclist start a ride, switch to a navigator, see live heart rate over the map, and later review the saved ride. The Compose app now records workouts, displays Results and reopens saved rides from History. The map overlay is the next feature. The sustained background ride with a physical strap is still an acceptance check for milestone 3.
 
 ## 1. Read the chest strap
 
@@ -21,6 +21,10 @@ Settings opens from Home with or without a strap. Its five-row table shows each 
 **Verify on Home.** Change a boundary and a color in Settings, then return to Home. Confirm that the background follows the saved zone for the live BPM. Restart the app twice, with another edit between launches, and check that the latest values persist. Exercise readings just below, at and above each threshold in both modes.
 
 ## 3. Record a workout
+
+Follow the [step 3 implementation plan](docs/step-03-record-workout.md) for the recording rules, Room draft lifecycle, foreground service and acceptance ride.
+
+**Implemented with synthetic emulator verification.** Recording, Pause, Resume, Finish, Save, Discard and draft recovery are available. Results includes mean and maximum BPM, a timeline with signal gaps and pauses, and time in the captured zones. The rider can record with unconfigured zones and review that ride's BPM and timeline. [Step 3 verification record](docs/step-03-record-workout.md#verification-record)
 
 Place a large **Start workout** button on Home alongside access to **History** and **Settings**. Starting opens the workout screen with large live BPM, the current zone's background color, a workout timer and **Pause**. Capture the ride's boundaries and colors in a local Room draft and append timestamped readings during recording. Keep recording while the navigator is in front or the screen is off. A dropped signal leaves the timer running. Reconnect when possible and mark the gap.
 
@@ -46,6 +50,8 @@ Let the rider show or hide a compact window during a workout. Give the entire ba
 **Verify across apps.** On the Pixel 6a, switch between a navigator and another app with the overlay open. Check a custom palette on light and dark maps, including a black zone. Interrupt the signal and check that a dash replaces the BPM even when the background was already black. Verify map interaction outside the window, permission denial and revocation. Hiding the window keeps the recording active. Finishing the workout removes the window.
 
 ## 5. Review a saved ride
+
+**Implemented with milestone 3.** Home opens a separate History screen. It lists each saved ride's date, active duration and mean BPM. Selecting a row opens that ride's Results using its original zone settings. [Step 3 verification record](docs/step-03-record-workout.md#verification-record)
 
 Open the saved workout list from **History** on Home. Selecting a ride shows the same timeline, zones and time in each zone that the rider saw on Results after finishing. Distinguish a manual pause from an interval when the sensor stopped reporting.
 

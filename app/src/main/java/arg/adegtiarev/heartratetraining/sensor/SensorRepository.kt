@@ -31,21 +31,29 @@ class SensorRepository(
     val state = mutableState.asStateFlow()
     private var current: SensorState
         get() = mutableState.value
-        set(value) { mutableState.value = value }
+        set(value) {
+            if (mutableState.value.sample != null && value.sample == null) recorder?.signalLost(elapsedMs())
+            mutableState.value = value
+        }
 
     private var operation: Job? = null
     private var expiry: Job? = null
     private var loading: Job? = null
     private var loaded = false
     private var visitOpen = false
+    private var releaseAfterWorkout = false
+    private var recorder: SensorRecorder? = null
     private var visible = false
     private var autoConnectPending = false
+    private var deliberatelyDisconnected = false
     private val storageLock = Mutex()
     private val connectionLock = Mutex()
 
     fun startVisit() {
+        releaseAfterWorkout = false
         if (visitOpen) return
         visitOpen = true
+        deliberatelyDisconnected = false
         current = SensorState()
         autoConnectPending = true
         loading = scope.launch {
@@ -61,6 +69,11 @@ class SensorRepository(
     }
 
     fun stopVisit() {
+        if (recorder != null) {
+            visible = false
+            releaseAfterWorkout = true
+            return
+        }
         visitOpen = false
         visible = false
         loaded = false
@@ -68,11 +81,28 @@ class SensorRepository(
         disconnect()
     }
 
+    fun recordWith(listener: SensorRecorder) {
+        check(recorder == null)
+        recorder = listener
+        if (!visitOpen) {
+            startVisit()
+            releaseAfterWorkout = true
+        }
+        if (!deliberatelyDisconnected && operation?.isActive != true && current.access == SensorAccess.Ready) {
+            current.remembered?.let { startOperation { connectAndRecover(it) } }
+        }
+    }
+
+    fun releaseRecorder() {
+        recorder = null
+        if (releaseAfterWorkout) stopVisit()
+    }
+
     fun setVisible(isVisible: Boolean) {
         visible = isVisible
         if (visible) {
             refresh()
-        } else if (current.phase == SensorPhase.Scanning || current.phase == SensorPhase.Searching) {
+        } else if (recorder == null && (current.phase == SensorPhase.Scanning || current.phase == SensorPhase.Searching)) {
             autoConnectPending = current.phase == SensorPhase.Searching
             resetOperation()
         }
@@ -89,9 +119,9 @@ class SensorRepository(
             current = current.copy(access = access)
         }
         expireStaleSample()
-        if (visible && loaded && access == SensorAccess.Ready && autoConnectPending) {
+        if ((visible || recorder != null) && loaded && access == SensorAccess.Ready && autoConnectPending) {
             autoConnectPending = false
-            current.remembered?.let { startOperation { findAndConnect(it) } }
+            current.remembered?.let { startOperation { if (recorder != null) connectAndRecover(it) else findAndConnect(it) } }
         }
     }
 
@@ -126,6 +156,7 @@ class SensorRepository(
     }
 
     fun disconnect() {
+        deliberatelyDisconnected = true
         autoConnectPending = false
         resetOperation()
     }
@@ -137,11 +168,12 @@ class SensorRepository(
     }
 
     private fun startOperation(block: suspend () -> Unit) {
+        deliberatelyDisconnected = false
         autoConnectPending = false
         resetOperation()
         val access = transport.access()
         current = current.copy(access = access)
-        if (!visible || !loaded || access != SensorAccess.Ready) return
+        if ((!visible && recorder == null) || !loaded || access != SensorAccess.Ready) return
         operation = scope.launch {
             try {
                 // Finish closing the old scanner or GATT client before opening its replacement.
@@ -172,6 +204,7 @@ class SensorRepository(
     private suspend fun connectAndRecover(initial: Strap) {
         var target = initial
         var canRecover = true
+        var retries = 0
         while (true) {
             current = current.copy(phase = SensorPhase.Connecting, active = target, sample = null)
             var subscribed = false
@@ -185,7 +218,10 @@ class SensorRepository(
                         }
                         is SensorEvent.Measurement -> if (subscribed) {
                             receive(event)
-                            if (event.value is HeartRateMeasurement.Pulse) canRecover = true
+                            if (event.value is HeartRateMeasurement.Pulse) {
+                                canRecover = true
+                                retries = 0
+                            }
                         }
                     }
                 }
@@ -194,7 +230,14 @@ class SensorRepository(
                 currentCoroutineContext().ensureActive()
                 expiry?.cancel()
                 current = current.copy(sample = null)
-                if (!subscribed || !canRecover || failure.phase != SensorPhase.ConnectionFailed) throw failure
+                if (failure.phase != SensorPhase.ConnectionFailed) throw failure
+                if (recorder != null && transport.access() == SensorAccess.Ready) {
+                    if (retries >= 4) throw failure
+                    current = current.copy(phase = SensorPhase.Searching)
+                    delay(1_000L shl retries++)
+                    continue
+                }
+                if (!subscribed || !canRecover) throw failure
                 if (!visible || transport.access() != SensorAccess.Ready) {
                     autoConnectPending = true
                     throw failure
@@ -225,6 +268,7 @@ class SensorRepository(
             HeartRateMeasurement.ContactLost -> current = current.copy(phase = SensorPhase.ContactLost, sample = null)
             is HeartRateMeasurement.Pulse -> {
                 val sample = PulseSample(value.bpm, event.receivedAtMs)
+                recorder?.pulse(sample)
                 current = current.copy(phase = SensorPhase.Live, sample = sample)
                 val remaining = FRESH_MS - (elapsedMs() - sample.receivedAtMs)
                 if (remaining <= 0) expireStaleSample() else expiry = scope.launch {

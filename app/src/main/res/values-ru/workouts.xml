@@ -1,0 +1,47 @@
+<resources>
+    <string name="workout_start">Начать тренировку</string>
+    <string name="workout_return">Вернуться к тренировке</string>
+    <string name="workout_history">История</string>
+    <string name="workout_results">Результаты тренировки</string>
+    <string name="workout_recording">Идёт запись тренировки</string>
+    <string name="workout_paused">Тренировка на паузе</string>
+    <string name="workout_active_time">Активное время</string>
+    <string name="workout_pause">Пауза</string>
+    <string name="workout_resume">Продолжить</string>
+    <string name="workout_finish">Завершить</string>
+    <string name="workout_discard">Удалить черновик</string>
+    <string name="workout_channel">Запись тренировки</string>
+    <string name="workout_notification_open">Нажмите, чтобы открыть тренировку</string>
+    <string name="workout_notification_permission">Разрешите уведомления, чтобы возвращаться к тренировке из других приложений.</string>
+    <string name="workout_service_error">Не удалось начать запись. Проверьте доступ к Bluetooth и повторите попытку.</string>
+    <string name="workout_storage_error">Не удалось прочитать или записать данные тренировки. Повторите попытку.</string>
+    <string name="workout_loading">Загрузка данных тренировки…</string>
+    <string name="workout_back">Назад</string>
+    <string name="workout_history_empty">Здесь появятся сохранённые тренировки.</string>
+    <string name="workout_average">Средний пульс</string>
+    <string name="workout_maximum">Максимальный пульс</string>
+    <string name="workout_avg_short">Средний пульс %1$s</string>
+    <string name="workout_bpm">%1$d уд/мин</string>
+    <string name="workout_chart">Пульс во времени</string>
+    <string name="workout_zone_times">Время в зонах</string>
+    <string name="workout_zone_share">Доля времени с измерениями</string>
+    <string name="workout_less_than">&lt;%1$s</string>
+    <string name="workout_zone_reached">Достигнута</string>
+    <string name="workout_no_zones">На старте тренировки зоны не были настроены.</string>
+    <string name="workout_no_samples">В этой тренировке нет измерений пульса.</string>
+    <string name="workout_gap">Потеря сигнала</string>
+    <string name="workout_chart_description">%1$s. %2$s · %3$s</string>
+    <string name="workout_duration_label">Активное время %1$s</string>
+    <plurals name="workout_pauses">
+        <item quantity="one">%d пауза</item>
+        <item quantity="few">%d паузы</item>
+        <item quantity="many">%d пауз</item>
+        <item quantity="other">%d паузы</item>
+    </plurals>
+    <plurals name="workout_gaps">
+        <item quantity="one">%d разрыв сигнала</item>
+        <item quantity="few">%d разрыва сигнала</item>
+        <item quantity="many">%d разрывов сигнала</item>
+        <item quantity="other">%d разрыва сигнала</item>
+    </plurals>
+</resources>

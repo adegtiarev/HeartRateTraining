@@ -1,6 +1,7 @@
 package arg.adegtiarev.heartratetraining
 
 import android.bluetooth.BluetoothAdapter
+import android.Manifest
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -9,6 +10,7 @@ import android.content.pm.PackageManager
 import android.location.LocationManager
 import android.os.Build
 import android.os.Bundle
+import android.os.SystemClock
 import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -17,8 +19,10 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
+import androidx.core.content.edit
 import androidx.core.net.toUri
 import androidx.core.view.WindowCompat
 import androidx.compose.ui.graphics.Color
@@ -27,12 +31,22 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import arg.adegtiarev.heartratetraining.bluetooth.sensorPermissions
 import arg.adegtiarev.heartratetraining.ui.HeartRateScreens
 import arg.adegtiarev.heartratetraining.ui.HomeViewModel
+import arg.adegtiarev.heartratetraining.ui.WorkoutViewModel
+import arg.adegtiarev.heartratetraining.workout.WorkoutService
+import arg.adegtiarev.heartratetraining.zones.ZoneConfiguration
 import arg.adegtiarev.heartratetraining.ui.contrastingText
 import arg.adegtiarev.heartratetraining.ui.theme.HeartRateTrainingTheme
 
 class MainActivity : ComponentActivity() {
-    private val sensors get() = (application as HeartRateApplication).sensors
-    private val zones get() = (application as HeartRateApplication).zones
+    private val app get() = application as HeartRateApplication
+    private val sensors get() = app.sensors
+    private val zones get() = app.zones
+    private val workouts by viewModels<WorkoutViewModel> {
+        viewModelFactory { initializer { WorkoutViewModel(app.recorder, sensors, SystemClock::elapsedRealtime) } }
+    }
+    private var notificationVisit by mutableIntStateOf(0)
+    private var explainNotifications by mutableStateOf(false)
+    private val notifications = registerForActivityResult(ActivityResultContracts.RequestPermission()) { startRecordingService() }
     private val model by viewModels<HomeViewModel> {
         viewModelFactory { initializer { HomeViewModel(sensors, zones) } }
     }
@@ -53,6 +67,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         sensors.startVisit()
+        if (savedInstanceState == null && intent.action == WorkoutService.OPEN_WORKOUT) notificationVisit++
         openPermissionSettings = savedInstanceState?.getBoolean("permissionSettings") == true
         enableEdgeToEdge()
         setContent {
@@ -60,6 +75,9 @@ class MainActivity : ComponentActivity() {
                 HeartRateScreens(
                     home = model,
                     zones = zones,
+                    workouts = workouts, library = app.library, onStartWorkout = ::startWorkout,
+                    notificationVisit = notificationVisit,
+                    explainNotifications = explainNotifications,
                     legacyLocation = Build.VERSION.SDK_INT < Build.VERSION_CODES.S,
                     openPermissionSettings = openPermissionSettings,
                     onPermission = {
@@ -86,6 +104,33 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private fun startWorkout(config: ZoneConfiguration?) {
+        if (!app.recorder.requestStart(config)) return
+        if (Build.VERSION.SDK_INT >= 33 && shouldAskNotifications()) {
+            getSharedPreferences("workout_permissions", MODE_PRIVATE).edit { putBoolean("asked_notifications", true) }
+            explainNotifications = false
+            notifications.launch(Manifest.permission.POST_NOTIFICATIONS)
+        } else startRecordingService()
+    }
+
+    private fun shouldAskNotifications() = Build.VERSION.SDK_INT >= 33 &&
+        checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED &&
+        !getSharedPreferences("workout_permissions", MODE_PRIVATE).getBoolean("asked_notifications", false)
+
+    private fun startRecordingService() {
+        if (!app.recorder.state.value.starting) return
+        try {
+            ContextCompat.startForegroundService(this, Intent(this, WorkoutService::class.java))
+        } catch (_: RuntimeException) {
+            app.recorder.startFailed()
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        if (intent.action == WorkoutService.OPEN_WORKOUT) notificationVisit++
+    }
+
     override fun onStart() {
         super.onStart()
         ContextCompat.registerReceiver(this, radioChanges, IntentFilter().apply {
@@ -97,6 +142,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        explainNotifications = shouldAskNotifications()
         if (sensorPermissions().all { checkSelfPermission(it) == PackageManager.PERMISSION_GRANTED }) {
             openPermissionSettings = false
         }

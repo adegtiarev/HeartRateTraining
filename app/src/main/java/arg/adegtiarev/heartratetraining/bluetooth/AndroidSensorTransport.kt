@@ -18,8 +18,10 @@ import androidx.core.content.ContextCompat
 import arg.adegtiarev.heartratetraining.sensor.*
 import java.util.UUID
 import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.buffer
 import no.nordicsemi.android.ble.BleManager
 import no.nordicsemi.android.ble.callback.FailCallback
 import no.nordicsemi.android.ble.observer.ConnectionObserver
@@ -108,7 +110,7 @@ class AndroidSensorTransport(private val context: Context) : SensorTransport {
             request.cancel()
             manager.close()
         }
-    }
+    }.buffer(Channel.UNLIMITED)
 }
 
 private class HeartRateManager(

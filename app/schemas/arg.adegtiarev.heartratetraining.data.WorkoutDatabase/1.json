@@ -1,0 +1,156 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "b99740daf2bddac6a35c957ebef55730",
+    "entities": [
+      {
+        "tableName": "workouts",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`pendingSlot` INTEGER, `averageBpm` REAL, `id` TEXT NOT NULL, `startedAt` INTEGER NOT NULL, `zones` TEXT, `phase` TEXT NOT NULL, `offsetMs` INTEGER NOT NULL, `activeMs` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "pendingSlot",
+            "columnName": "pendingSlot",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "averageBpm",
+            "columnName": "averageBpm",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "ride.id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ride.startedAt",
+            "columnName": "startedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ride.zones",
+            "columnName": "zones",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "ride.phase",
+            "columnName": "phase",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ride.offsetMs",
+            "columnName": "offsetMs",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ride.activeMs",
+            "columnName": "activeMs",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_workouts_pendingSlot",
+            "unique": true,
+            "columnNames": [
+              "pendingSlot"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_workouts_pendingSlot` ON `${TABLE_NAME}` (`pendingSlot`)"
+          },
+          {
+            "name": "index_workouts_phase_startedAt",
+            "unique": false,
+            "columnNames": [
+              "phase",
+              "startedAt"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_workouts_phase_startedAt` ON `${TABLE_NAME}` (`phase`, `startedAt`)"
+          }
+        ]
+      },
+      {
+        "tableName": "workout_events",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`rideId` TEXT NOT NULL, `sequence` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `offsetMs` INTEGER NOT NULL, `kind` TEXT NOT NULL, `bpm` INTEGER, FOREIGN KEY(`rideId`) REFERENCES `workouts`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "rideId",
+            "columnName": "rideId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sequence",
+            "columnName": "sequence",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "event.offsetMs",
+            "columnName": "offsetMs",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "event.kind",
+            "columnName": "kind",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "event.bpm",
+            "columnName": "bpm",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "sequence"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_workout_events_rideId",
+            "unique": false,
+            "columnNames": [
+              "rideId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_workout_events_rideId` ON `${TABLE_NAME}` (`rideId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "workouts",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "rideId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'b99740daf2bddac6a35c957ebef55730')"
+    ]
+  }
+}

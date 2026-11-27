@@ -6,6 +6,11 @@ data class Strap(val id: String, val name: String?)
 data class NearbyStrap(val strap: Strap, val advertisesHeartRate: Boolean)
 data class PulseSample(val bpm: Int, val receivedAtMs: Long)
 
+interface SensorRecorder {
+    fun pulse(sample: PulseSample)
+    fun signalLost(atMs: Long)
+}
+
 enum class SensorAccess { Checking, Ready, Unavailable, PermissionNeeded, BluetoothOff, LocationOff }
 
 enum class SensorPhase {

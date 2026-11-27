@@ -26,7 +26,7 @@ class HomeScreenTest {
         compose.setContent {
             HeartRateTrainingTheme {
                 HomeScreen(HomeUiState(state.value), legacyLocation = legacyLocation, openPermissionSettings = false,
-                    onZoneSettings = {}, onRetryZones = {},
+                    onZoneSettings = {}, onRetryZones = {}, onStart = {}, onHistory = {},
                     onPermission = { state.value = SensorState(access = SensorAccess.Ready) },
                     onEnableBluetooth = {}, onEnableLocation = {}, onRetry = {},
                     onFind = { state.value = state.value.copy(phase = SensorPhase.Scanning,

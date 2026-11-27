@@ -200,6 +200,40 @@ class SensorRepositoryTest {
         assertEquals(2, rig.transport.connections.size)
     }
 
+    @Test fun recorderReceivesEveryPacketAndReconnectsAfterTheActivityFinishes() = runTest {
+        val rig = Rig(this)
+        rig.launch()
+        rig.repo.select(strap)
+        runCurrent()
+        rig.event(SensorEvent.Subscribed)
+        val captured = mutableListOf<PulseSample>()
+        val losses = mutableListOf<Long>()
+        rig.repo.recordWith(object : SensorRecorder {
+            override fun pulse(sample: PulseSample) { captured += sample }
+            override fun signalLost(atMs: Long) { losses += atMs }
+        })
+        rig.repo.setVisible(false)
+        rig.repo.stopVisit()
+        repeat(100) {
+            rig.transport.notifications.trySend(SensorEvent.Measurement(HeartRateMeasurement.Pulse(130), 0))
+        }
+        runCurrent()
+        assertEquals(100, captured.size)
+        assertEquals(1, rig.transport.connections.size)
+        rig.transport.notifications.close(SensorFailure(SensorPhase.ConnectionFailed))
+        runCurrent()
+        advanceTimeBy(1000)
+        runCurrent()
+        assertEquals(listOf(strap, strap), rig.transport.connections)
+        assertEquals(0, rig.transport.searches)
+        rig.event(SensorEvent.Subscribed)
+        rig.packet(0, 110)
+        assertEquals(110, captured.last().bpm)
+        assertEquals(listOf(0L), losses)
+        rig.repo.releaseRecorder()
+        assertEquals(SensorPhase.Idle, rig.state.phase)
+    }
+
     @Test fun radioLossDuringHandshakeCanRecoverWhenBluetoothIsEnabledAgain() = runTest {
         val rig = Rig(this, strap)
         rig.launch()

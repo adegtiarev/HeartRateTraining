@@ -1,0 +1,45 @@
+<resources>
+    <string name="workout_start">Iniciar entrenamiento</string>
+    <string name="workout_return">Volver al entrenamiento</string>
+    <string name="workout_history">Historial</string>
+    <string name="workout_results">Resultados del entrenamiento</string>
+    <string name="workout_recording">Entrenamiento en curso</string>
+    <string name="workout_paused">Entrenamiento en pausa</string>
+    <string name="workout_active_time">Tiempo activo</string>
+    <string name="workout_pause">Pausar</string>
+    <string name="workout_resume">Reanudar</string>
+    <string name="workout_finish">Finalizar</string>
+    <string name="workout_discard">Descartar</string>
+    <string name="workout_channel">Grabación del entrenamiento</string>
+    <string name="workout_notification_open">Toca para abrir tu entrenamiento</string>
+    <string name="workout_notification_permission">Permite las notificaciones para volver al entrenamiento desde otra aplicación.</string>
+    <string name="workout_service_error">No se pudo iniciar la grabación. Revisa el acceso a Bluetooth e inténtalo de nuevo.</string>
+    <string name="workout_storage_error">No se pudo acceder a los datos del entrenamiento. Inténtalo de nuevo.</string>
+    <string name="workout_loading">Cargando datos del entrenamiento…</string>
+    <string name="workout_back">Volver</string>
+    <string name="workout_history_empty">Aquí aparecerán tus entrenamientos guardados.</string>
+    <string name="workout_average">Pulso medio</string>
+    <string name="workout_maximum">Pulso máximo</string>
+    <string name="workout_avg_short">Pulso medio %1$s</string>
+    <string name="workout_bpm">%1$d lpm</string>
+    <string name="workout_chart">Pulso a lo largo del tiempo</string>
+    <string name="workout_zone_times">Tiempo en zonas</string>
+    <string name="workout_zone_share">Porcentaje del tiempo medido</string>
+    <string name="workout_less_than">&lt;%1$s</string>
+    <string name="workout_zone_reached">Alcanzada</string>
+    <string name="workout_no_zones">Las zonas no estaban configuradas al iniciar este entrenamiento.</string>
+    <string name="workout_no_samples">No se registraron mediciones de pulso.</string>
+    <string name="workout_gap">Pérdida de señal</string>
+    <string name="workout_chart_description">%1$s. %2$s · %3$s</string>
+    <string name="workout_duration_label">Tiempo activo %1$s</string>
+    <plurals name="workout_pauses">
+        <item quantity="one">%d pausa</item>
+        <item quantity="many">%d pausas</item>
+        <item quantity="other">%d pausas</item>
+    </plurals>
+    <plurals name="workout_gaps">
+        <item quantity="one">%d interrupción de señal</item>
+        <item quantity="many">%d interrupciones de señal</item>
+        <item quantity="other">%d interrupciones de señal</item>
+    </plurals>
+</resources>

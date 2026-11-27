@@ -15,6 +15,10 @@ import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.Density
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.room.Room
+import arg.adegtiarev.heartratetraining.data.WorkoutDatabase
+import arg.adegtiarev.heartratetraining.data.WorkoutLibrary
+import arg.adegtiarev.heartratetraining.workout.WorkoutRecorder
 import androidx.test.espresso.Espresso.closeSoftKeyboard
 import arg.adegtiarev.heartratetraining.sensor.*
 import arg.adegtiarev.heartratetraining.ui.*
@@ -51,11 +55,18 @@ class ZoneScreensTest {
         override suspend fun save(configuration: ZoneConfiguration) { settings.value = ZoneSettings.Saved(configuration) }
     }
     private lateinit var resources: Resources
+    private lateinit var database: WorkoutDatabase
 
-    @After fun close() { scope.cancel() }
+    @After fun close() {
+        scope.cancel()
+        if (::database.isInitialized) database.close()
+    }
 
     private fun launch(language: String, fontScale: Float = 1.4f) {
         val activity = compose.activity
+        database = Room.inMemoryDatabaseBuilder(activity, WorkoutDatabase::class.java).build()
+        val library = WorkoutLibrary(database.workouts())
+        val recorder = WorkoutRecorder(database.workouts(), sensors, scope, { now }, { now })
         val configuration = Configuration(activity.resources.configuration).apply {
             setLocale(Locale.forLanguageTag(language))
             this.fontScale = fontScale
@@ -74,7 +85,8 @@ class ZoneScreensTest {
             ) {
                 HeartRateTrainingTheme {
                     val home = viewModel { HomeViewModel(sensors, zones) }
-                    HeartRateScreens(home, zones, false, false, {}, {}, {}, {})
+                    val workouts = viewModel { WorkoutViewModel(recorder, sensors) { now } }
+                    HeartRateScreens(home, zones, false, false, {}, {}, {}, {}, workouts, library, {})
                 }
             }
         }
