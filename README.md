@@ -2,13 +2,15 @@
 
 Heart Rate Training is an Android app for recording rides with a Bluetooth chest strap. It shows live heart rate over a map in the color of your current zone, records while the phone is locked and keeps saved rides in local History.
 
+Initial development is complete. Feedback from rides guides bug fixes and improvements. You can build the app from the source in this repository. [Build instructions](#run-the-app)
+
 ## Try live heart rate
 
 Put on the strap, open the app and grant access to nearby devices. Android 10 and 11 request location access for discovery. Tap **Find chest strap** and choose your device. Home shows live BPM as soon as the first measurement arrives. A dash appears if readings stop or the sensor reports poor contact. The app remembers the last working strap and looks for it on the next launch.
 
 If the connected strap reports its battery level, Home and Workout show the percentage next to its name. Below 10%, the percentage blinks twice per second. Disconnecting the strap clears the battery reading.
 
-**Disconnect** releases the strap for the rest of the current visit. Use **Connect** to reconnect manually or **Choose another strap** to select a replacement. Open **Zone settings** to color Home by heart rate, including before pairing a strap. The interface is available in English, Russian and Spanish.
+**Disconnect** releases the strap for the rest of the current visit. Use **Connect** to reconnect manually or **Choose another strap** to select a replacement. Open **Zone settings** to color Home by heart rate, including before pairing a strap. The interface is available in English (default), Russian and Spanish.
 
 ## Record and review a ride
 
@@ -28,17 +30,13 @@ If the ride began with unconfigured zones, the digits appear on black. A white d
 
 When the strap battery drops below 10%, the overlay alternates between its usual background and white twice per second. A white zone alternates with black so the warning stays visible. The digits keep their contrast in both phases. At 10% or higher the background stays steady.
 
-## Planned rider workflow
+## Rider workflow
 
-The planned public distribution is source code and build instructions on GitHub. There are currently no plans for a Google Play release.
-
-1. **Put on the strap and open the app.** On first use, choose the strap from nearby devices and connect it to the phone. On later launches, the app looks for the remembered strap and connects automatically when it is available. You can also disconnect it manually. The app targets the standard Bluetooth Low Energy Heart Rate Service, with the Coospo H9Z as the first strap for testing. [Bluetooth Heart Rate Service](https://www.bluetooth.com/specifications/specs/heart-rate-service-1-0/) · [Coospo H9Z](https://www.coospo.com/products/h9z-chest-heart-rate-monitor)
+1. **Put on the strap and open the app.** On first use, choose the strap from nearby devices and connect it to the phone. On later launches, the app looks for the remembered strap and connects automatically when it is available. You can also disconnect it manually. The app uses the standard Bluetooth Low Energy Heart Rate Service and has been tested with the Coospo H9Z. [Bluetooth Heart Rate Service](https://www.bluetooth.com/specifications/specs/heart-rate-service-1-0/) · [Coospo H9Z](https://www.coospo.com/products/h9z-chest-heart-rate-monitor)
 2. **Check your pulse on Home.** Before you start recording, the home screen shows a large heart rate reading in beats per minute (BPM). The screen background takes the color of your current zone. A large **Start workout** button is the main action. **History** opens the list of saved workouts. **Settings** opens your zone boundaries and colors.
 3. **Start the workout.** The workout screen keeps the large BPM reading and zone-colored background and adds an elapsed workout timer and a **Pause** button. Recording continues while another app is in front or the screen is off. Enable the optional overlay to see BPM over the navigator. [Overlay controls](#see-your-pulse-over-a-map)
 4. **Pause, then resume or finish.** Tap **Pause** to stay on the workout screen and see live BPM while the recorder skips new readings. **Resume** continues recording into the same workout. Only **Finish** ends the workout and opens its results. A lost signal leaves the timer running during recording. The overlay shows a dash on a black background until fresh readings return.
-5. **Review the results and choose Save or Discard.** See the heart rate timeline, the zones reached and time in each zone before deciding. **Save** adds the workout to History in the local database. **Discard** removes the draft and its readings. A calorie estimate depends on finding a suitable method for cycling and having the inputs it requires.
-
-The planned interface languages are English (default), Russian and Spanish.
+5. **Review the results and choose Save or Discard.** See the heart rate timeline, the zones reached and time in each zone before deciding. **Save** adds the workout to History in the local database. **Discard** removes the draft and its readings.
 
 ## Zone colors
 
@@ -68,9 +66,15 @@ On macOS or Linux, run `./gradlew assembleDebug testDebugUnitTest`. The debug AP
 
 ## Project documents
 
-- [Implementation plan](IMPLEMENTATION_PLAN.md) — milestones, acceptance checks and decisions to make during development.
+The step documents preserve the original implementation and test procedures for reference.
+
+- [Implementation record](IMPLEMENTATION_PLAN.md) — completed milestones and verification results.
 - [Step 1 — Connect a chest strap and display live heart rate](docs/step-01-live-heart-rate.md) — implementation sequence and checks for the first working sensor connection.
 - [Step 2 — Configure heart rate zones](docs/step-02-heart-rate-zones.md) — zone rules, settings and verification.
-- [Step 3 — Record a workout](docs/step-03-record-workout.md) — implementation plan for background recording, draft recovery and ride verification.
+- [Step 3 — Record a workout](docs/step-03-record-workout.md) — background recording, draft recovery and ride verification.
 - [Step 4 — Ride with the heart rate overlay](docs/step-04-workout-overlay.md) — overlay behavior, permission flow and cross-app verification.
 - [Contributor and agent instructions](AGENTS.md) — architecture, language conventions and verification.
+
+## License
+
+The project's original code and documentation are in the public domain under The Unlicense. Anyone may use, modify, sell and redistribute them for any purpose, without attribution. The Gradle Wrapper and third-party libraries carry their own licenses. [License text](LICENSE)

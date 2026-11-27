@@ -56,7 +56,7 @@ During a drag, update the window directly from the touch position. On API 34 and
 2. Interrupt contact while the digits are on black. Check the dash and TalkBack description, then restore contact and confirm fresh digits return. Lock and unlock the phone with Maps in front. Pause, observe live BPM, resume and hide the overlay. Verify later samples belong to the same ride.
 3. Re-enable the overlay and finish from Pause. Check that Results opens with the window gone, save the ride and reopen it from History. On a separate run, decline access, grant it on retry, then revoke it in Android Settings and return to Maps. Verify the window is gone and check capture continuity. If Android stops the process, check the existing draft recovery on relaunch.
 
-The rider used the overlay during a workout with the Pixel 6a and Coospo H9Z and requested larger digits at first use and more space around them. The remaining radio reconnection and screen-lock checks are listed in the [step 3 hardware procedure](step-03-record-workout.md#pixel-6a-with-a-coospo-h9z).
+The rider used the overlay during a workout with the Pixel 6a and Coospo H9Z and requested larger digits at first use and more space around them.
 
 ## Verification record
 

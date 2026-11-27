@@ -1,18 +1,12 @@
-# Implementation plan
+# Implementation record
 
-The app records workouts, shows live heart rate over a navigator and reopens saved rides from History. The rider completed a workout with a Pixel 6a and a Coospo H9Z. Targeted hardware checks remain for recording through screen lock and reconnecting to the strap with the navigator in front.
+Initial development is complete as of November 27, 2026. Future fixes and improvements will come from feedback on rides.
 
 ## 1. Read the chest strap
-
-Follow the [step 1 implementation plan](docs/step-01-live-heart-rate.md) for the verified dependency baseline, build sequence and hardware acceptance checks.
 
 **Completed and verified on November 26, 2026.** Home receives live notifications from a Coospo H9Z on a Pixel 6a running Android 17. The hardware checks covered first selection, automatic connection on a fresh launch, rotation, manual disconnect, launch with the strap absent, recovery when it returned, Bluetooth off/on and permission denial/recovery. The app also received fresh samples with Google Maps in front. See the [verification record](docs/step-01-live-heart-rate.md#verification-record) for device and automated test coverage.
 
 On November 27 the Pixel also read the H9Z battery level over the same connection while receiving live heart rate. Home and Workout display the percentage beside the sensor name. Below 10% the percentage and the workout overlay background flash twice per second. The Pixel exercised the threshold and a white zone over Google Maps with synthetic battery levels. [Overlay verification](docs/step-04-workout-overlay.md#verification-record)
-
-On first use, discover compatible Bluetooth Low Energy sensors and let the rider choose a strap. Remember the successfully connected strap. On later launches, check for that device and connect automatically when it is available. Subscribe to Heart Rate Measurement and show live BPM in large digits on Home. Handle Bluetooth being off, denied permissions, an unavailable strap and an explicit disconnect.
-
-**Verify on a Pixel 6a with a Coospo H9Z.** Select the strap on first use and see BPM before starting a workout. Relaunch with the strap present and verify automatic connection without another selection. Repeat with it absent and check that no stale BPM appears. A deliberate disconnect releases the strap and leaves it disconnected for the rest of that visit unless the rider chooses to reconnect.
 
 ## 2. Define zones
 
@@ -20,65 +14,27 @@ On first use, discover compatible Bluetooth Low Energy sensors and let the rider
 
 Settings opens from Home with or without a strap. Its five-row table shows each zone's color and inclusive range. Zone 1 starts at zero. Riders can enter the other four starts manually or calculate them using a known maximum or an adult age. Each edit updates the previous zone's upper limit. Recalculation preserves custom colors. Preferences DataStore saves all four thresholds and five colors together. Home uses the latest saved values, including after relaunch. [Zone settings and default colors](README.md#zone-colors)
 
-**Verify on Home.** Change a boundary and a color in Settings, then return to Home. Confirm that the background follows the saved zone for the live BPM. Restart the app twice, with another edit between launches, and check that the latest values persist. Exercise readings just below, at and above each threshold in both modes.
-
 ## 3. Record a workout
 
-Follow the [step 3 implementation plan](docs/step-03-record-workout.md) for the recording rules, Room draft lifecycle, foreground service and acceptance ride.
+**Implemented and verified with a saved ride on the Pixel 6a.** The on-device database contained the ride and its readings from the Coospo H9Z. The results screen shows mean and maximum BPM, a timeline with signal gaps and pauses, and time in the captured zones. The rider can record with unconfigured zones and review that ride's BPM and timeline.
 
-**Implemented and verified with a saved ride on the Pixel 6a.** The on-device database contained the ride and its readings. Emulator tests cover Pause, Resume, Finish, Save, Discard and draft recovery. Results includes mean and maximum BPM, a timeline with signal gaps and pauses, and time in the captured zones. The rider can record with unconfigured zones and review that ride's BPM and timeline. [Step 3 verification record](docs/step-03-record-workout.md#verification-record)
-
-Place a large **Start workout** button on Home alongside access to **History** and **Settings**. Starting opens the workout screen with large live BPM, the current zone's background color, a workout timer and **Pause**. Capture the ride's boundaries and colors in a local Room draft and append timestamped readings during recording. Keep recording while the navigator is in front or the screen is off. A dropped signal leaves the timer running. Reconnect when possible and mark the gap.
-
-**Verify pause independently of finish.** Tap **Pause** while the strap is sending measurements. The workout screen still shows live BPM and offers **Resume** and **Finish**. Check that the stored sample count stays fixed as BPM changes. **Resume** appends subsequent readings to the same draft. Repeat with the navigator open, the screen locked and the signal interrupted.
-
-**Verify finish and review.** From a paused workout, tap **Finish**. Recording ends and Results opens on the captured ride with **Save** and **Discard**. Save creates exactly one History entry. Discard removes the draft and its readings. Reopening the app after an interruption offers the same decision for the captured portion.
+Emulator tests cover Pause, Resume, Finish, Save, Discard and draft recovery. The Android 17 emulator recorded synthetic readings with Google Maps in front and with the display off. After a signal gap, fresh readings appeared in the same ride. [Step 3 verification record](docs/step-03-record-workout.md#verification-record)
 
 ### Background recording design
 
-The Pixel 6a kept receiving H9Z notifications during a short switch to Google Maps in milestone 1. Android closes the GATT connection if the app process dies. For the rider-initiated workout, use a started foreground service of type `connectedDevice` for the duration of the session. The existing sensor repository remains the sole owner of the GATT connection. [Android background BLE guidance](https://developer.android.com/develop/connectivity/bluetooth/ble/background)
-
-- **Start.** From the visible workout start action, verify Bluetooth access, start a private service with `startForegroundService()`, then promptly call `ServiceCompat.startForeground()` with the connected-device type and the workout notification. Declare `FOREGROUND_SERVICE` and, for API 34+, `FOREGROUND_SERVICE_CONNECTED_DEVICE`. Granted `BLUETOOTH_CONNECT` satisfies the modern Bluetooth prerequisite. Surface a recoverable error if service startup fails. [Service launch rules](https://developer.android.com/develop/background-work/services/fgs/launch) · [Connected-device permissions](https://developer.android.com/develop/background-work/services/fgs/service-types#connected-device)
-- **During a ride.** Give the service ownership of the recording session across activity destruction, app switches and screen lock. Feed each timestamped sample to the Room recorder before deriving the latest value for the UI. Keep the connection and notification during Pause, suspend writes until Resume, and use the same draft. Reconnect to the known strap with bounded attempts and backoff after a dropout. Keep device selection in the visible UI.
-- **Notification.** Use a low-importance workout channel and a tap action that returns to the active workout. On API 33+, request `POST_NOTIFICATIONS` in context. If denied, the service still supplies its mandatory notification and Android exposes the active service in Task Manager. [Notification permission behavior](https://developer.android.com/develop/ui/compose/notifications/notification-permission)
-- **Finish and recover.** On Finish, persist the stopped draft, stop the service and remove the workout notification before opening Results. Commit readings throughout the ride so a system or user stop leaves a recoverable draft. Android can stop the whole process without a cleanup callback. At the next launch offer Save or Discard. [User-initiated stops](https://developer.android.com/develop/background-work/services/fgs/handle-user-stopping)
-
-**Acceptance on the Pixel.** Run a sustained ride with Maps in front and the screen locked for part of it. Check persisted timestamps, gaps, pause/resume and elapsed duration. Repeat with notification permission denied, interrupt the strap signal, and stop the app from Android's active-apps list. Verify draft recovery and that Finish removes the notification.
+A `connectedDevice` foreground service owns the recording session, and the sensor repository owns the Bluetooth connection. The workout notification returns the rider to the active session. During Pause the service keeps the connection alive. The recorder stores new readings once the rider taps Resume. Finish stops the service and removes its notification. [Foreground service and recovery](docs/step-03-record-workout.md#4-run-recording-in-a-connected-device-foreground-service)
 
 ## 4. Ride with the overlay
 
-Follow the [step 4 implementation plan](docs/step-04-workout-overlay.md) for the permission flow, service-owned window and cross-app acceptance checks.
-
 **Verified on Android 10 and 17 emulators and tested over Google Maps on the Pixel 6a.** During recording or Pause, the rider can move the pulse window with one finger and pinch with two to resize both the window and digits. The first-use scale is twice the original size, with more space around the digits. The app restores the rider's chosen scale and relative position across workouts and after a cold launch. The foreground service colors the window using the ride's zone snapshot and removes it on Finish. [Step 4 verification record](docs/step-04-workout-overlay.md#verification-record)
-
-Let the rider show or hide a compact window during a workout. Give the entire background the current zone color so the rider can recognize it at a glance. BPM is the only visible number. Include the zone in the accessibility description. Request overlay access when the rider first enables it.
-
-**Verify across apps.** On the Pixel 6a, switch between a navigator and another app with the overlay open. Drag and pinch the window, rotate the phone and check its position and size on the next workout. Check a custom palette on light and dark maps, including a black zone. Interrupt the signal and check that a dash replaces the BPM even when the background was already black. Verify map interaction outside the window, permission denial and revocation. Hiding the window keeps the recording active. Finishing the workout removes the window.
 
 ## 5. Review a saved ride
 
 **Implemented with milestone 3.** Home opens a separate History screen. It lists each saved ride's date, active duration and mean BPM. Selecting a row opens that ride's Results using its original zone settings. [Step 3 verification record](docs/step-03-record-workout.md#verification-record)
 
-Open the saved workout list from **History** on Home. Selecting a ride shows the same timeline, zones and time in each zone that the rider saw on Results after finishing. Distinguish a manual pause from an interval when the sensor stopped reporting.
+## Design decisions
 
-**Verify using a known ride.** Use irregularly spaced readings, a zone change, a pause and a dropout. Check zone durations, chart gaps and total duration. Edit a boundary and a color, restart the app and reopen the saved ride. Its timeline and zone totals should still reflect the original configuration. Start another ride and verify it uses the updated settings.
-
-## 6. Validate the first release
-
-Exercise the complete ride in English, Russian and Spanish. Cover the minimum supported Android version and a sustained recording on the Pixel 6a with the navigator open. The GitHub deliverables are the source code and instructions for building it.
-
-**Verify the release.** Build from a clean checkout. Complete a ride, save it and reopen it. Repeat and discard it. Check the workout screen, notifications, overlay and results in all three languages.
-
-## Decisions that affect several milestones
-
-- **Bluetooth and background execution.** Use a single standard Heart Rate Service subscription across the recorder, workout screen and overlay. The [background recording design](#background-recording-design) describes service ownership and recovery in milestone 3.
-- **Workout data.** Use a wall-clock start time to place a ride in history and elapsed time to position readings within it. A dropout counts toward active workout duration. A manual pause does not. Both interrupt the chart line and are excluded from zone totals. Calculate time in zone from observed intervals using the boundaries captured at workout start.
-- **Draft recovery.** Keep active and stopped drafts out of saved history. On relaunch after an interruption, offer to keep the captured portion or discard it. Saving and discarding must each be safe to retry.
-- **Overlay behavior.** Use an Android application overlay so the same window works across navigators and other foreground apps on supported phones. Android can hide it over system UI, and an app can hide overlays on its own windows. Keep recording through these visibility changes. [Android application overlay windows](https://developer.android.com/reference/android/view/WindowManager.LayoutParams#TYPE_APPLICATION_OVERLAY) · [Apps that hide overlays](https://developer.android.com/reference/android/view/Window#setHideOverlayWindows(boolean))
-
-## Questions to resolve
-
-| When | Decision |
-| --- | --- |
-| When evaluating calories | Review evidence for an estimator suitable for cycling, the profile fields it needs and the effect of gaps. Include a clearly labeled estimate only if the method and available data support one. Keep this independent of the first working ride. |
-| Before public distribution | Choose the license for the source repository. |
+- **Bluetooth and background execution.** The recorder, workout screen and overlay share a single Heart Rate Service subscription.
+- **Workout data.** The wall-clock start time places a ride in History. Elapsed time positions readings within it. The active timer runs through a dropout and freezes during a manual pause. Both interrupt the chart line. Zone totals count observed intervals using the boundaries captured at workout start.
+- **Draft recovery.** On relaunch after an interruption, the rider can save or discard the captured portion. Only saved rides appear in History. Each decision is safe to retry.
+- **Overlay behavior.** Android and foreground apps can hide the overlay on their own windows. Recording continues through these visibility changes. [Android application overlay windows](https://developer.android.com/reference/android/view/WindowManager.LayoutParams#TYPE_APPLICATION_OVERLAY) · [Apps that hide overlays](https://developer.android.com/reference/android/view/Window#setHideOverlayWindows(boolean))

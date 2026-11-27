@@ -1,6 +1,6 @@
 # Working on Heart Rate Training
 
-These instructions apply throughout the repository. Communicate with the maintainer in Russian. Write repository documentation in English and place new development documents in `docs/`. Read the [README](README.md) for the rider's workflow and the [implementation plan](IMPLEMENTATION_PLAN.md) for the next milestone and its acceptance check.
+These instructions apply throughout the repository. Communicate with the maintainer in Russian. Write repository documentation in English and place new development documents in `docs/`. The initial feature set is complete. Use feedback from rides to guide fixes and improvements. Read the [README](README.md) for the rider's workflow and the [implementation record](IMPLEMENTATION_PLAN.md) for completed milestones and verification results.
 
 ## Architecture
 
@@ -20,4 +20,4 @@ These instructions apply throughout the repository. Communicate with the maintai
 
 - Match verification to the change. Exercise zone boundaries and time gaps with deterministic inputs. Check save, discard and recovery against the database. Validate Bluetooth and overlay behavior on a physical phone with a chest strap and a navigation app.
 - Keep credentials, local SDK paths, device identifiers and personal workout captures out of the public repository. Use synthetic readings in examples and tests.
-- When a milestone lands, update its status and record what was verified in the [implementation plan](IMPLEMENTATION_PLAN.md). Update the [README](README.md) when the build instructions or available features change.
+- Update the [README](README.md) when the build instructions or available features change.
